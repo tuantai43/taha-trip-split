@@ -1,0 +1,38 @@
+{
+  "name": "taha-trip-split",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --build"
+  },
+  "dependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "pinia": "^3.0.2",
+    "@supabase/supabase-js": "^2.49.4",
+    "dexie": "^4.0.11",
+    "zod": "^3.24.2",
+    "@vueuse/core": "^12.8.2",
+    "date-fns": "^4.1.0",
+    "uuid": "^11.1.0",
+    "lucide-vue-next": "^0.479.0",
+    "tailwind-merge": "^3.0.2",
+    "clsx": "^2.1.1",
+    "class-variance-authority": "^0.7.1",
+    "radix-vue": "^1.9.17"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "typescript": "~5.7.3",
+    "vite": "^6.2.4",
+    "vue-tsc": "^2.2.8",
+    "@tailwindcss/vite": "^4.1.1",
+    "tailwindcss": "^4.1.1",
+    "vite-plugin-pwa": "^0.21.2",
+    "@types/uuid": "^10.0.0"
+  }
+}
