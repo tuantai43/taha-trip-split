@@ -1,24 +1,24 @@
-import { defineStore } from "pinia";
-import { ref, nextTick } from "vue";
-import { db } from "@/db/database";
 import type {
-  DexieTrip,
-  DexieTripMember,
   DexieTransaction,
   DexieTransactionSplit,
+  DexieTrip,
+  DexieTripMember,
 } from "@/db/database";
-import { v4 as uuidv4 } from "uuid";
+import { db } from "@/db/database";
 import type {
-  Trip,
-  TripMember,
-  Transaction,
-  TransactionSplit,
-  CreateTripInput,
-  CreateTransactionInput,
   AddMemberInput,
+  CreateTransactionInput,
+  CreateTripInput,
   MemberBalance,
   OptimizedDebt,
+  Transaction,
+  TransactionSplit,
+  Trip,
+  TripMember,
 } from "@/types";
+import { defineStore } from "pinia";
+import { v4 as uuidv4 } from "uuid";
+import { nextTick, ref } from "vue";
 import { useAuthStore } from "./authStore";
 
 export const useTripStore = defineStore("trip", () => {

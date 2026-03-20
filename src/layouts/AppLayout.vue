@@ -1,9 +1,8 @@
 <script setup lang="ts">
 
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
 import { useTripStore } from '@/stores/tripStore'
-import { Home, Settings, Plus } from 'lucide-vue-next'
+import { Home, Plus, Settings } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
 
 
 const router = useRouter()

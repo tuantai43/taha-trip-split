@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAuthStore } from '@/stores/authStore'
 import ToastContainer from '@/components/common/ToastContainer.vue'
+import { useAuthStore } from '@/stores/authStore'
+import { onMounted } from 'vue'
 
 const auth = useAuthStore()
 

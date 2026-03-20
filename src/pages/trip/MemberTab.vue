@@ -1,13 +1,13 @@
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
+import Input from '@/components/ui/Input.vue'
+import { formatCurrency } from '@/lib/utils'
 import { useTripStore } from '@/stores/tripStore'
 import { useUiStore } from '@/stores/uiStore'
-import { formatCurrency } from '@/lib/utils'
-import Card from '@/components/ui/Card.vue'
-import Button from '@/components/ui/Button.vue'
-import Input from '@/components/ui/Input.vue'
-import { UserPlus, User, Crown, Pencil, Check, X } from 'lucide-vue-next'
+import { Check, Crown, Pencil, User, UserPlus, X } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
 
 const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
 

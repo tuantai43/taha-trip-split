@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { watch, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTripStore } from '@/stores/tripStore'
-import { formatDate } from '@/lib/utils'
-import Card from '@/components/ui/Card.vue'
-import Button from '@/components/ui/Button.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import { Plus, MapPin, CalendarDays } from 'lucide-vue-next'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
+import { formatDate } from '@/lib/utils'
+import { useTripStore } from '@/stores/tripStore'
+import { CalendarDays, MapPin, Plus } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 
 import { useAuthStore } from '@/stores/authStore'

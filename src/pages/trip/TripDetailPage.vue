@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTripStore } from '@/stores/tripStore'
-import { formatCurrency, formatDate, formatTime } from '@/lib/utils'
-import Card from '@/components/ui/Card.vue'
-import Button from '@/components/ui/Button.vue'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
+import { formatCurrency, formatDate, formatTime } from '@/lib/utils'
 import MemberTab from '@/pages/trip/MemberTab.vue'
+import { useTripStore } from '@/stores/tripStore'
 import {
   ArrowLeft,
+  Car,
+  Hotel,
+  Package,
+  PartyPopper,
+  Pill,
   Plus,
-  Users,
   Receipt,
   Scale,
   Settings,
-  Utensils,
-  Hotel,
-  Car,
-  Ticket,
   ShoppingBag,
-  PartyPopper,
-  Pill,
-  Package,
+  Ticket,
+  Users,
+  Utensils,
 } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{ tripId: string }>()
 const router = useRouter()

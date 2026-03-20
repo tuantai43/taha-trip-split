@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useUiStore } from '@/stores/uiStore'
-import Card from '@/components/ui/Card.vue'
-import Button from '@/components/ui/Button.vue'
-import { User, LogOut, LogIn, RefreshCw, Cloud, CloudOff, Loader2, AlertCircle } from 'lucide-vue-next'
+import { AlertCircle, Cloud, CloudOff, Loader2, LogIn, LogOut, RefreshCw, User } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const auth = useAuthStore()

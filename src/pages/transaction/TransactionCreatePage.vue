@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTripStore } from '@/stores/tripStore'
-import { useUiStore } from '@/stores/uiStore'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
+import { useTripStore } from '@/stores/tripStore'
+import { useUiStore } from '@/stores/uiStore'
+import type { Category, SplitMethod, TransactionType } from '@/types'
 import { ArrowLeft, Check, Trash2 } from 'lucide-vue-next'
-import type { TransactionType, SplitMethod, Category } from '@/types'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { formatCurrency } from '@/lib/utils'
 

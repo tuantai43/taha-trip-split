@@ -1,17 +1,17 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { db } from "@/db/database";
 import { supabase } from "@/lib/supabase";
 import {
+  lastSyncError,
   startAutoSync,
   stopAutoSync,
   syncAll,
   syncStatus,
-  lastSyncError,
 } from "@/lib/syncService";
-import { db } from "@/db/database";
 import { useTripStore } from "@/stores/tripStore";
 import type { Profile } from "@/types";
 import type { User } from "@supabase/supabase-js";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);

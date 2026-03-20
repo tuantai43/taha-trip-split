@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { formatCurrency, formatDate } from '@/lib/utils'
-import Card from '@/components/ui/Card.vue'
-import Button from '@/components/ui/Button.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
 import { supabase } from '@/lib/supabase'
-import { Luggage, ArrowRight } from 'lucide-vue-next'
+import { formatCurrency, formatDate } from '@/lib/utils'
+import { ArrowRight, Luggage } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{ token: string }>()
 const router = useRouter()

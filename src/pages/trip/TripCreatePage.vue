@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTripStore } from '@/stores/tripStore'
-import { useUiStore } from '@/stores/uiStore'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
+import { useTripStore } from '@/stores/tripStore'
+import { useUiStore } from '@/stores/uiStore'
 import { ArrowLeft } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const tripStore = useTripStore()
