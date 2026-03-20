@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 import { db } from "@/db/database";
 import type {
   DexieTrip,
@@ -29,15 +29,26 @@ export const useTripStore = defineStore("trip", () => {
   const splits = ref<TransactionSplit[]>([]);
   const loading = ref(false);
 
+  // Reset all state to initial values
+  function reset() {
+    trips.value = [];
+    currentTrip.value = null;
+    members.value = [];
+    transactions.value = [];
+    splits.value = [];
+    loading.value = false;
+  }
+
   // ─── Load trips ────────────────────────────────────
   async function loadTrips() {
     loading.value = true;
-    const all = await db.trips
-      .orderBy("updatedAt")
-      .reverse()
-      .toArray()
-      .catch(() => db.trips.toArray());
-    trips.value = all.map(dexieToTrip);
+    const all = await db.trips.orderBy("updatedAt").reverse().toArray();
+    // Filter out trips marked for deletion
+    const visible = all.filter((t) => t._syncAction !== "delete");
+    // Force replace array reference for reactivity
+    trips.value = [];
+    await nextTick();
+    trips.value = visible.map(dexieToTrip);
     loading.value = false;
   }
 
@@ -449,14 +460,72 @@ export const useTripStore = defineStore("trip", () => {
 
   // ─── Delete trip ───────────────────────────────────
   async function deleteTrip(tripId: string) {
+    const auth = useAuthStore();
+    const trip = await db.trips.get(tripId);
+    if (!trip) throw new Error("Trip not found");
+    if (trip.createdBy !== (auth.user?.id ?? "local")) {
+      throw new Error("Chỉ chủ chuyến đi mới được phép xoá");
+    }
+
     const now = new Date().toISOString();
+    // Đánh dấu trip cần xoá
     await db.trips.update(tripId, {
-      status: "archived",
-      updatedAt: now,
       _syncStatus: "pending",
-      _syncAction: "update",
+      _syncAction: "delete",
       _localUpdatedAt: now,
     });
+
+    // Đánh dấu tất cả trip_members cần xoá
+    const memberIds = await db.tripMembers
+      .where("tripId")
+      .equals(tripId)
+      .primaryKeys();
+    for (const id of memberIds) {
+      await db.tripMembers.update(id, {
+        _syncStatus: "pending",
+        _syncAction: "delete",
+        _localUpdatedAt: now,
+      });
+    }
+
+    // Đánh dấu tất cả transactions và splits cần xoá
+    const txIds = await db.transactions
+      .where("tripId")
+      .equals(tripId)
+      .primaryKeys();
+    for (const txId of txIds) {
+      await db.transactions.update(txId, {
+        _syncStatus: "pending",
+        _syncAction: "delete",
+        _localUpdatedAt: now,
+      });
+      // Đánh dấu splits của transaction này
+      const splitIds = await db.transactionSplits
+        .where("transactionId")
+        .equals(txId)
+        .primaryKeys();
+      for (const splitId of splitIds) {
+        await db.transactionSplits.update(splitId, {
+          _syncStatus: "pending",
+          _syncAction: "delete",
+          _localUpdatedAt: now,
+        });
+      }
+    }
+
+    // Đánh dấu tất cả settlements cần xoá
+    const settlementIds = await db.settlements
+      .where("tripId")
+      .equals(tripId)
+      .primaryKeys();
+    for (const id of settlementIds) {
+      await db.settlements.update(id, {
+        _syncStatus: "pending",
+        _syncAction: "delete",
+        _localUpdatedAt: now,
+      });
+    }
+
     await loadTrips();
   }
 
@@ -546,5 +615,6 @@ export const useTripStore = defineStore("trip", () => {
     calculateBalances,
     optimizeDebts,
     setTripStatus,
+    reset,
   };
 });

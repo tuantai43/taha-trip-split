@@ -37,7 +37,7 @@ export interface Trip {
   status: TripStatus;
   start_date: string | null;
   end_date: string | null;
-  invite_code: string;
+  invite_code: string | null;
   share_enabled: boolean;
   share_token: string | null;
   created_by: string;

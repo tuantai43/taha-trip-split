@@ -9,7 +9,7 @@ interface DexieTrip {
   status: "draft" | "active" | "settled" | "archived";
   startDate: string | null;
   endDate: string | null;
-  inviteCode: string;
+  inviteCode: string | null;
   shareEnabled: boolean;
   shareToken: string | null;
   createdBy: string;

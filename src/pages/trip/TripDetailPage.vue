@@ -29,7 +29,9 @@ const props = defineProps<{ tripId: string }>()
 const router = useRouter()
 const tripStore = useTripStore()
 
+
 const activeTab = ref<'transactions' | 'members' | 'settle'>('transactions')
+const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
 
 onMounted(() => {
   tripStore.loadTrip(props.tripId)
@@ -132,7 +134,7 @@ const typeLabels: Record<string, string> = {
               {{ formatDate(date, 'long') }}
             </div>
             <div class="space-y-2">
-              <Card v-for="tx in txs" :key="tx.id" class="flex cursor-pointer items-center gap-3 !p-3 active:bg-muted/50" @click="router.push(`/trip/${tripId}/transaction/${tx.id}/edit`)">
+              <Card v-for="tx in txs" :key="tx.id" class="flex items-center gap-3 !p-3" :class="isReadOnly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:bg-muted/50'" @click="!isReadOnly && router.push(`/trip/${tripId}/transaction/${tx.id}/edit`)">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
                   <component :is="categoryIcons[tx.category] ?? Package" :size="18" class="text-muted-foreground" />
                 </div>
@@ -155,7 +157,7 @@ const typeLabels: Record<string, string> = {
           </template>
         </div>
         <EmptyState v-else message="Chưa có giao dịch nào">
-          <template #action>
+          <template v-if="!isReadOnly" #action>
             <Button size="sm" @click="router.push(`/trip/${tripId}/transaction/new`)">
               <Plus :size="16" class="mr-1" /> Thêm giao dịch
             </Button>
@@ -163,16 +165,11 @@ const typeLabels: Record<string, string> = {
         </EmptyState>
 
         <!-- FAB -->
-        <button
-          class="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
-          @click="router.push(`/trip/${tripId}/transaction/new`)"
-        >
-          <Plus :size="24" />
-        </button>
+        
       </div>
 
       <!-- Tab: Members -->
-      <MemberTab v-if="activeTab === 'members'" :trip-id="tripId" />
+      <MemberTab v-if="activeTab === 'members'" :trip-id="tripId" :readonly="isReadOnly" />
 
       <!-- Tab: Settle -->
       <div v-if="activeTab === 'settle'">

@@ -44,7 +44,15 @@ async function remoteInsert(
   row: Record<string, unknown>,
   localId: string,
 ): Promise<void> {
-  const { error } = await supabase.from(table).insert(row);
+  // Đảm bảo dùng đúng tên bảng Supabase
+  const tableMap: Record<string, string> = {
+    trips: "tripsplit_trips",
+    trip_members: "tripsplit_trip_members",
+    transactions: "tripsplit_transactions",
+    transaction_splits: "tripsplit_transaction_splits",
+  };
+  const realTable = tableMap[table] || table;
+  const { error } = await supabase.from(realTable).insert(row);
   if (error) {
     if (error.code === "23505") return; // duplicate key → already exists, skip
     throwSyncError(table, "create", localId, row, error);
@@ -62,17 +70,65 @@ async function pushChanges(userId: string): Promise<void> {
     const row = tripToRow(trip, userId);
     if (trip._syncAction === "create") {
       await remoteInsert("trips", row, trip.id);
+      await db.trips.update(trip.id, {
+        _syncStatus: "synced",
+        _syncAction: undefined,
+      });
     } else if (trip._syncAction === "update") {
       const { error } = await supabase
-        .from("trips")
+        .from("tripsplit_trips")
         .update(row)
         .eq("id", trip.id);
       if (error) throwSyncError("trips", "update", trip.id, row, error);
+      await db.trips.update(trip.id, {
+        _syncStatus: "synced",
+        _syncAction: undefined,
+      });
+    } else if (trip._syncAction === "delete") {
+      // Xoá tất cả dữ liệu liên quan trên Supabase
+      // 1. Xoá transaction_splits
+      await supabase
+        .from("tripsplit_transaction_splits")
+        .delete()
+        .in(
+          "transaction_id",
+          await db.transactions.where("tripId").equals(trip.id).primaryKeys(),
+        );
+      // 2. Xoá transactions
+      await supabase
+        .from("tripsplit_transactions")
+        .delete()
+        .eq("trip_id", trip.id);
+      // 3. Xoá trip_members
+      await supabase
+        .from("tripsplit_trip_members")
+        .delete()
+        .eq("trip_id", trip.id);
+      // 4. Xoá settlements (nếu có bảng này)
+      if (supabase.from("tripsplit_trip_members")) {
+        await supabase
+          .from("tripsplit_trip_members")
+          .delete()
+          .eq("trip_id", trip.id);
+      }
+      // 5. Xoá trip
+      await supabase.from("tripsplit_trips").delete().eq("id", trip.id);
+
+      // Xoá vật lý local
+      await db.transactionSplits
+        .where("transactionId")
+        .anyOf(
+          await db.transactions.where("tripId").equals(trip.id).primaryKeys(),
+        )
+        .delete();
+      await db.transactions.where("tripId").equals(trip.id).delete();
+      await db.tripMembers.where("tripId").equals(trip.id).delete();
+      if (db.settlements) {
+        await db.settlements.where("tripId").equals(trip.id).delete();
+      }
+      await db.trips.delete(trip.id);
+      continue;
     }
-    await db.trips.update(trip.id, {
-      _syncStatus: "synced",
-      _syncAction: undefined,
-    });
   }
 
   // Push trip members
@@ -87,7 +143,7 @@ async function pushChanges(userId: string): Promise<void> {
       await remoteInsert("trip_members", row, member.id);
     } else if (member._syncAction === "update") {
       const { error } = await supabase
-        .from("trip_members")
+        .from("tripsplit_trip_members")
         .update(row)
         .eq("id", member.id);
       if (error)
@@ -125,16 +181,16 @@ async function pushChanges(userId: string): Promise<void> {
       await remoteInsert("transactions", row, tx.id);
     } else if (tx._syncAction === "update") {
       const { error } = await supabase
-        .from("transactions")
+        .from("tripsplit_transactions")
         .update(row)
         .eq("id", tx.id);
       if (error) throwSyncError("transactions", "update", tx.id, row, error);
     } else if (tx._syncAction === "delete") {
       await supabase
-        .from("transaction_splits")
+        .from("tripsplit_transaction_splits")
         .delete()
         .eq("transaction_id", tx.id);
-      await supabase.from("transactions").delete().eq("id", tx.id);
+      await supabase.from("tripsplit_transactions").delete().eq("id", tx.id);
       // Also physically remove from Dexie now that remote is clean
       await db.transactionSplits.where("transactionId").equals(tx.id).delete();
       await db.transactions.delete(tx.id);
@@ -185,13 +241,16 @@ async function pushChanges(userId: string): Promise<void> {
       await remoteInsert("transaction_splits", row, split.id);
     } else if (split._syncAction === "update") {
       const { error } = await supabase
-        .from("transaction_splits")
+        .from("tripsplit_transaction_splits")
         .update(row)
         .eq("id", split.id);
       if (error)
         throwSyncError("transaction_splits", "update", split.id, row, error);
     } else if (split._syncAction === "delete") {
-      await supabase.from("transaction_splits").delete().eq("id", split.id);
+      await supabase
+        .from("tripsplit_transaction_splits")
+        .delete()
+        .eq("id", split.id);
       await db.transactionSplits.delete(split.id);
       continue;
     }
@@ -206,12 +265,12 @@ async function pushChanges(userId: string): Promise<void> {
 async function pullChanges(userId: string): Promise<void> {
   // Pull trips the user is a member of
   const { data: remoteMemberships } = await supabase
-    .from("trip_members")
+    .from("tripsplit_trip_members")
     .select("trip_id")
     .eq("user_id", userId);
 
   const { data: ownedTrips } = await supabase
-    .from("trips")
+    .from("tripsplit_trips")
     .select("id")
     .eq("created_by", userId);
 
@@ -225,7 +284,7 @@ async function pullChanges(userId: string): Promise<void> {
 
   // Pull trips
   const { data: trips } = await supabase
-    .from("trips")
+    .from("tripsplit_trips")
     .select("*")
     .in("id", tripIdsArr);
 
@@ -240,7 +299,7 @@ async function pullChanges(userId: string): Promise<void> {
 
   // Pull members for all trips
   const { data: members } = await supabase
-    .from("trip_members")
+    .from("tripsplit_trip_members")
     .select("*")
     .in("trip_id", tripIdsArr);
 
@@ -254,7 +313,7 @@ async function pullChanges(userId: string): Promise<void> {
 
   // Pull transactions
   const { data: txs } = await supabase
-    .from("transactions")
+    .from("tripsplit_transactions")
     .select("*")
     .in("trip_id", tripIdsArr);
 
@@ -274,7 +333,7 @@ async function pullChanges(userId: string): Promise<void> {
     for (let i = 0; i < txIds.length; i += batchSize) {
       const batch = txIds.slice(i, i + batchSize);
       const { data: splits } = await supabase
-        .from("transaction_splits")
+        .from("tripsplit_transaction_splits")
         .select("*")
         .in("transaction_id", batch);
 
@@ -405,7 +464,7 @@ function rowToTrip(r: any): DexieTrip {
     status: r.status,
     startDate: r.start_date,
     endDate: r.end_date,
-    inviteCode: r.invite_code,
+    inviteCode: r.invite_code ?? null,
     shareEnabled: r.share_enabled,
     shareToken: r.share_token,
     createdBy: r.created_by ?? "local",

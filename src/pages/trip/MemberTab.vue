@@ -1,5 +1,6 @@
+
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useTripStore } from '@/stores/tripStore'
 import { useUiStore } from '@/stores/uiStore'
 import { formatCurrency } from '@/lib/utils'
@@ -8,6 +9,10 @@ import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import { UserPlus, User, Crown, Pencil, Check, X } from 'lucide-vue-next'
 
+const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
+
+// expose for template
+defineExpose({ isReadOnly })
 const props = defineProps<{ tripId: string }>()
 const tripStore = useTripStore()
 const ui = useUiStore()
@@ -67,7 +72,8 @@ async function saveEdit(memberId: string) {
 <template>
   <div>
     <!-- Add member -->
-    <form class="mb-4 flex gap-2" @submit.prevent="handleAddMember">
+
+    <form class="mb-4 flex gap-2" @submit.prevent="handleAddMember" v-if="!isReadOnly">
       <Input v-model="newMemberName" placeholder="Nhập tên thành viên..." class="flex-1" />
       <Button :disabled="adding" size="icon">
         <UserPlus :size="18" />

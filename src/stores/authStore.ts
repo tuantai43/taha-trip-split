@@ -65,7 +65,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function fetchProfile() {
     if (!user.value) return;
     const { data } = await supabase
-      .from("profiles")
+      .from("tripsplit_profiles")
       .select("*")
       .eq("id", user.value.id)
       .single();
@@ -159,7 +159,7 @@ export const useAuthStore = defineStore("auth", () => {
     ]);
     // Reset in-memory state
     const tripStore = useTripStore();
-    tripStore.$reset();
+    tripStore.reset();
     user.value = null;
     profile.value = null;
   }

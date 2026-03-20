@@ -66,6 +66,19 @@ async function archiveTrip() {
   ui.showToast('Đã lưu trữ chuyến đi', 'success')
   router.push('/')
 }
+
+// Xoá trip (chỉ khi đã lưu trữ)
+async function handleDeleteTrip() {
+  if (!trip.value) return
+  if (!confirm('Bạn có chắc muốn xoá chuyến đi này? Hành động này không thể hoàn tác.')) return
+  try {
+    await tripStore.deleteTrip(trip.value.id)
+    ui.showToast('Đã xoá chuyến đi', 'success')
+    router.push('/')
+  } catch {
+    ui.showToast('Có lỗi xảy ra khi xoá chuyến đi', 'error')
+  }
+}
 </script>
 
 <template>
@@ -180,6 +193,10 @@ async function archiveTrip() {
           @click="archiveTrip"
         >
           Lưu trữ chuyến đi
+        </Button>
+        <!-- Nút xoá trip: chỉ hiển thị khi đã lưu trữ, đặt cuối trang -->
+        <Button v-if="trip?.status === 'archived'" class="w-full mt-8" variant="destructive" size="sm" @click="handleDeleteTrip">
+          Xoá chuyến đi
         </Button>
       </div>
     </template>

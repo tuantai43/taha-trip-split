@@ -22,7 +22,7 @@ onMounted(async () => {
   try {
     // Fetch trip by share token
     const { data: tripData, error: tripErr } = await supabase
-      .from('trips')
+      .from('tripsplit_trips')
       .select('*')
       .eq('share_token', props.token)
       .eq('share_enabled', true)
@@ -36,7 +36,7 @@ onMounted(async () => {
 
     // Fetch members
     const { data: memberData } = await supabase
-      .from('trip_members')
+      .from('tripsplit_trip_members')
       .select('id, display_name')
       .eq('trip_id', tripData.id)
 
@@ -44,7 +44,7 @@ onMounted(async () => {
 
     // Fetch transactions
     const { data: txData } = await supabase
-      .from('transactions')
+      .from('tripsplit_transactions')
       .select('*, transaction_splits(*)')
       .eq('trip_id', tripData.id)
       .order('transaction_date', { ascending: false })

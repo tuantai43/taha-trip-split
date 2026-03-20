@@ -15,7 +15,10 @@ const router = useRouter()
 const tripStore = useTripStore()
 const ui = useUiStore()
 
+
+
 const isEditMode = computed(() => !!props.txId)
+const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
 
 onMounted(() => {
   if (!tripStore.currentTrip || tripStore.currentTrip.id !== props.tripId) {
@@ -232,7 +235,7 @@ async function handleSubmit() {
       </button>
     </div>
 
-    <form class="space-y-4" @submit.prevent="handleSubmit">
+    <form class="space-y-4" @submit.prevent="handleSubmit" v-if="!isReadOnly">
       <!-- Transaction type -->
       <div>
         <span class="mb-1.5 block text-sm font-medium">Loại chi tiêu</span>
@@ -370,5 +373,10 @@ async function handleSubmit() {
         {{ submitting ? 'Đang lưu...' : isEditMode ? 'Cập nhật giao dịch' : 'Lưu giao dịch' }}
       </Button>
     </form>
+    <template v-else>
+      <div class="text-center text-muted-foreground py-10">
+        Chuyến đi đã kết thúc. Bạn chỉ có thể xem thông tin.
+      </div>
+    </template>
   </div>
 </template>

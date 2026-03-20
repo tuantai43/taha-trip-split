@@ -32,9 +32,23 @@ async function handleSync() {
 }
 
 async function handleLogout() {
-  await auth.signOut()
-  ui.showToast('Đã đăng xuất', 'success')
-  router.push('/auth/login')
+  // Kiểm tra dữ liệu local chưa sync
+  const { db } = await import('@/db/database');
+  const [pendingTrips, pendingMembers, pendingTx, pendingSplits] = await Promise.all([
+    auth.isAuthenticated ? db.trips.where('_syncStatus').equals('pending').count() : 0,
+    auth.isAuthenticated ? db.tripMembers.where('_syncStatus').equals('pending').count() : 0,
+    auth.isAuthenticated ? db.transactions.where('_syncStatus').equals('pending').count() : 0,
+    auth.isAuthenticated ? db.transactionSplits.where('_syncStatus').equals('pending').count() : 0,
+  ]);
+  const pendingCount = pendingTrips + pendingMembers + pendingTx + pendingSplits;
+  if (pendingCount > 0) {
+    if (!confirm('Bạn có dữ liệu chưa đồng bộ lên server. Nếu đăng xuất, dữ liệu này sẽ bị xoá vĩnh viễn. Bạn có chắc chắn muốn đăng xuất?')) {
+      return;
+    }
+  }
+  await auth.signOut();
+  ui.showToast('Đã đăng xuất', 'success');
+  router.push('/auth/login');
 }
 </script>
 
