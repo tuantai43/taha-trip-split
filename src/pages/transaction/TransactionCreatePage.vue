@@ -34,7 +34,14 @@ const category = ref<Category>('other')
 const paidBy = ref('')
 const personalFor = ref('')
 const paidFromFund = ref(false)
-const transactionDate = ref(new Date().toISOString().split('T')[0]!)
+function getLocalDateString() {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+const transactionDate = ref(getLocalDateString())
 const selectedMembers = ref<Set<string>>(new Set())
 const submitting = ref(false)
 
@@ -68,6 +75,7 @@ function initDefaults() {
     paidBy.value = members.value[0]!.id
     personalFor.value = members.value[0]!.id
     selectedMembers.value = new Set(members.value.map((m) => m.id))
+    transactionDate.value = getLocalDateString()
   }
 }
 
@@ -148,7 +156,7 @@ async function handleSubmit() {
     ui.showToast('Nhập số tiền hợp lệ', 'error')
     return
   }
-  if (!description.value.trim()) {
+  if (txType.value !== 'income' && !description.value.trim()) {
     ui.showToast('Nhập mô tả giao dịch', 'error')
     return
   }
@@ -230,7 +238,8 @@ async function handleSubmit() {
         <ArrowLeft :size="20" />
       </button>
       <h1 class="text-lg font-bold">{{ isEditMode ? 'Sửa giao dịch' : 'Thêm giao dịch' }}</h1>
-      <button v-if="isEditMode" class="ml-auto rounded-lg p-2 text-destructive hover:bg-destructive/10" @click="handleDelete">
+      <button v-if="isEditMode" class="ml-auto rounded-lg p-2 text-destructive hover:bg-destructive/10"
+        @click="handleDelete">
         <Trash2 :size="18" />
       </button>
     </div>
@@ -240,18 +249,13 @@ async function handleSubmit() {
       <div>
         <span class="mb-1.5 block text-sm font-medium">Loại chi tiêu</span>
         <div class="flex gap-2">
-          <button
-            v-for="opt in [
-              { value: 'shared_expense', label: 'Chi chung' },
-              { value: 'personal_expense', label: 'Chi riêng' },
-              { value: 'income', label: 'Ghi có' },
-            ]"
-            :key="opt.value"
-            type="button"
-            class="flex-1 rounded-lg border px-3 py-2 text-sm transition-colors"
+          <button v-for="opt in [
+            { value: 'shared_expense', label: 'Chi chung' },
+            { value: 'personal_expense', label: 'Chi riêng' },
+            { value: 'income', label: 'Ghi có' },
+          ]" :key="opt.value" type="button" class="flex-1 rounded-lg border px-3 py-2 text-sm transition-colors"
             :class="txType === opt.value ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border text-muted-foreground'"
-            @click="txType = opt.value as TransactionType"
-          >
+            @click="txType = opt.value as TransactionType">
             {{ opt.label }}
           </button>
         </div>
@@ -264,32 +268,30 @@ async function handleSubmit() {
       </label>
 
       <!-- Description -->
-      <label class="flex flex-col gap-1.5">
+      <label class="flex flex-col gap-1.5" v-if="txType !== 'income'">
         <span class="text-sm font-medium">Mô tả <span class="text-destructive">*</span></span>
         <Input v-model="description" placeholder="VD: Ăn trưa phở" />
       </label>
 
       <!-- Paid from fund toggle -->
-      <div v-if="txType === 'shared_expense' || txType === 'personal_expense'" class="rounded-lg border border-border px-3 py-2.5">
+      <div v-if="txType === 'shared_expense' || txType === 'personal_expense'"
+        class="rounded-lg border border-border px-3 py-2.5">
         <div class="flex items-center justify-between">
           <div>
             <span class="text-sm font-medium">Trả từ quỹ chung</span>
             <p class="text-xs text-muted-foreground">Tiền từ quỹ góp chung, không tính cho 1 người</p>
           </div>
-          <button
-            type="button"
-            class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-            :class="paidFromFund ? 'bg-primary' : 'bg-muted'"
-            @click="paidFromFund = !paidFromFund"
-          >
-            <span
-              class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
-              :class="paidFromFund ? 'translate-x-5' : 'translate-x-0'"
-            />
+          <button type="button" class="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+            :class="paidFromFund ? 'bg-primary' : 'bg-muted'" @click="paidFromFund = !paidFromFund">
+            <span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+              :class="paidFromFund ? 'translate-x-5' : 'translate-x-0'" />
           </button>
         </div>
         <div v-if="paidFromFund" class="mt-2 rounded bg-muted/50 px-2 py-1.5 text-xs">
-          Quỹ còn lại: <span class="font-semibold" :class="tripStore.fundBalance(isEditMode ? txId : undefined) <= 0 ? 'text-destructive' : 'text-primary'">{{ formatCurrency(tripStore.fundBalance(isEditMode ? txId : undefined), tripStore.currentTrip?.currency_code ?? 'VND') }}</span>
+          Quỹ còn lại: <span class="font-semibold"
+            :class="tripStore.fundBalance(isEditMode ? txId : undefined) <= 0 ? 'text-destructive' : 'text-primary'">{{
+              formatCurrency(tripStore.fundBalance(isEditMode ? txId : undefined), tripStore.currentTrip?.currency_code ??
+                'VND') }}</span>
         </div>
       </div>
 
@@ -297,10 +299,8 @@ async function handleSubmit() {
       <div v-if="!paidFromFund || txType === 'income'">
         <label class="flex flex-col gap-1.5">
           <span class="text-sm font-medium">{{ txType === 'income' ? 'Ai nạp tiền?' : 'Ai trả?' }}</span>
-          <select
-            v-model="paidBy"
-            class="flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm"
-          >
+          <select v-model="paidBy"
+            class="flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm">
             <option v-for="m in members" :key="m.id" :value="m.id">{{ m.display_name }}</option>
           </select>
         </label>
@@ -310,14 +310,10 @@ async function handleSubmit() {
       <div v-if="txType !== 'income'">
         <span class="mb-1.5 block text-sm font-medium">Danh mục</span>
         <div class="flex flex-wrap gap-2">
-          <button
-            v-for="cat in categoryOptions"
-            :key="cat.value"
-            type="button"
+          <button v-for="cat in categoryOptions" :key="cat.value" type="button"
             class="rounded-full border px-3 py-1.5 text-xs transition-colors"
             :class="category === cat.value ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'"
-            @click="category = cat.value"
-          >
+            @click="category = cat.value">
             {{ cat.icon }} {{ cat.label }}
           </button>
         </div>
@@ -327,10 +323,8 @@ async function handleSubmit() {
       <div v-if="txType === 'personal_expense'">
         <label class="flex flex-col gap-1.5">
           <span class="text-sm font-medium">Chi cho ai?</span>
-          <select
-            v-model="personalFor"
-            class="flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm"
-          >
+          <select v-model="personalFor"
+            class="flex h-10 w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm">
             <option v-for="m in members" :key="m.id" :value="m.id">{{ m.display_name }}</option>
           </select>
           <p class="text-xs text-muted-foreground">Người này sẽ nợ lại quỹ chung</p>
@@ -341,23 +335,17 @@ async function handleSubmit() {
       <div v-if="txType === 'shared_expense'">
         <span class="mb-1.5 block text-sm font-medium">Chia cho ai?</span>
         <div class="space-y-1">
-          <button
-            v-for="m in members"
-            :key="m.id"
-            type="button"
+          <button v-for="m in members" :key="m.id" type="button"
             class="flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors"
             :class="selectedMembers.has(m.id) ? 'border-primary bg-primary/5' : 'border-border'"
-            @click="toggleMember(m.id)"
-          >
-            <div
-              class="flex h-5 w-5 items-center justify-center rounded border"
-              :class="selectedMembers.has(m.id) ? 'border-primary bg-primary text-white' : 'border-input'"
-            >
+            @click="toggleMember(m.id)">
+            <div class="flex h-5 w-5 items-center justify-center rounded border"
+              :class="selectedMembers.has(m.id) ? 'border-primary bg-primary text-white' : 'border-input'">
               <Check v-if="selectedMembers.has(m.id)" :size="12" />
             </div>
             <span class="flex-1 text-left">{{ m.display_name }}</span>
             <span v-if="selectedMembers.has(m.id)" class="text-xs text-muted-foreground">
-              {{ splitPreview.find((s) => s.member_id === m.id)?.amount?.toLocaleString('vi-VN') ?? 0 }}
+              {{splitPreview.find((s) => s.member_id === m.id)?.amount?.toLocaleString('vi-VN') ?? 0}}
             </span>
           </button>
         </div>

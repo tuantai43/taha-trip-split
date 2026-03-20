@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -22,7 +21,17 @@ const adding = ref(false)
 const editingId = ref<string | null>(null)
 const editingName = ref('')
 
-const balances = () => tripStore.calculateBalances()
+
+// Tổng số tiền đã nạp của mỗi thành viên (bao gồm ghi có và các khoản đã thanh toán không từ quỹ)
+const totalDeposited = (memberId: string) => {
+  return tripStore.transactions
+    .filter(
+      (tx) =>
+        (tx.type === 'income' && tx.paid_by === memberId) ||
+        ((tx.type === 'shared_expense' || tx.type === 'personal_expense') && tx.paid_by === memberId && !tx.paid_from_fund)
+    )
+    .reduce((sum, tx) => sum + tx.amount, 0)
+}
 
 async function handleAddMember() {
   const name = newMemberName.value.trim()
@@ -83,22 +92,16 @@ async function saveEdit(memberId: string) {
     <!-- Member list -->
     <div class="space-y-2">
       <Card v-for="member in tripStore.members" :key="member.id" class="flex items-center gap-3 !p-3">
-        <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-          :class="member.is_guest ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'"
-        >
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+          :class="member.is_guest ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'">
           <Crown v-if="member.role === 'owner'" :size="18" />
           <User v-else :size="18" />
         </div>
         <div class="min-w-0 flex-1">
           <!-- Editing mode -->
           <div v-if="editingId === member.id" class="flex items-center gap-2">
-            <Input
-              v-model="editingName"
-              class="h-8 text-sm"
-              @keyup.enter="saveEdit(member.id)"
-              @keyup.escape="cancelEdit"
-            />
+            <Input v-model="editingName" class="h-8 text-sm" @keyup.enter="saveEdit(member.id)"
+              @keyup.escape="cancelEdit" />
             <button class="rounded p-1 text-primary hover:bg-primary/10" @click="saveEdit(member.id)">
               <Check :size="16" />
             </button>
@@ -110,34 +113,23 @@ async function saveEdit(memberId: string) {
           <template v-else>
             <div class="flex items-center gap-2">
               <span class="truncate text-sm font-medium">{{ member.display_name }}</span>
-              <button
-                class="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                @click="startEdit(member.id, member.display_name)"
-              >
+              <button class="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                @click="startEdit(member.id, member.display_name)">
                 <Pencil :size="12" />
               </button>
-              <span
-                v-if="member.is_guest"
-                class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700"
-              >
+              <span v-if="member.is_guest"
+                class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">
                 Khách
               </span>
-              <span
-                v-if="member.role === 'owner'"
-                class="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
-              >
+              <span v-if="member.role === 'owner'"
+                class="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                 Chủ trip
               </span>
             </div>
             <div class="text-xs text-muted-foreground">
-              Số dư:
-              <span
-                :class="{
-                  'text-primary': (balances().find((b) => b.member_id === member.id)?.balance ?? 0) > 0,
-                  'text-destructive': (balances().find((b) => b.member_id === member.id)?.balance ?? 0) < 0,
-                }"
-              >
-                {{ formatCurrency(balances().find((b) => b.member_id === member.id)?.balance ?? 0) }}
+              Đã nạp:
+              <span class="text-primary">
+                {{ formatCurrency(totalDeposited(member.id), tripStore.currentTrip?.currency_code || 'VND') }}
               </span>
             </div>
           </template>

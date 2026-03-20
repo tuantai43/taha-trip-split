@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// Tag màu cho loại giao dịch
+const typeTagColors: Record<string, string> = {
+  shared_expense: 'bg-green-100 text-green-700',
+  personal_expense: 'bg-yellow-100 text-yellow-700',
+  income: 'bg-blue-100 text-blue-700',
+  transfer: 'bg-gray-100 text-gray-500',
+}
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Button from '@/components/ui/Button.vue'
@@ -9,18 +16,18 @@ import { useTripStore } from '@/stores/tripStore'
 import {
   ArrowLeft,
   Car,
+  ChartPie,
   Hotel,
   Package,
   PartyPopper,
   Pill,
   Plus,
   Receipt,
-  Scale,
   Settings,
   ShoppingBag,
   Ticket,
   Users,
-  Utensils,
+  Utensils
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -29,13 +36,20 @@ const props = defineProps<{ tripId: string }>()
 const router = useRouter()
 const tripStore = useTripStore()
 
-
-const activeTab = ref<'transactions' | 'members' | 'settle'>('transactions')
+const activeTab = ref<'overview' | 'transactions' | 'members'>('overview')
 const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
 
 onMounted(() => {
   tripStore.loadTrip(props.tripId)
 })
+
+const totalIncome = computed(() =>
+  tripStore.transactions
+    .filter((tx) => tx.type === 'income' || (!tx.paid_from_fund && (tx.type === 'shared_expense' || tx.type === 'personal_expense')))
+    .reduce((sum, tx) => sum + tx.amount, 0)
+)
+
+const fundRemaining = computed(() => tripStore.fundBalance())
 
 const totalSpent = computed(() =>
   tripStore.transactions
@@ -92,9 +106,6 @@ const typeLabels: Record<string, string> = {
         </button>
         <div class="min-w-0 flex-1">
           <h1 class="truncate text-lg font-bold">{{ tripStore.currentTrip.name }}</h1>
-          <p class="text-xs text-muted-foreground">
-            {{ formatCurrency(totalSpent, tripStore.currentTrip.currency_code) }} tổng chi
-          </p>
         </div>
         <button class="rounded-lg p-2 hover:bg-muted" @click="router.push(`/trip/${tripId}/settle`)">
           <Settings :size="18" />
@@ -103,26 +114,20 @@ const typeLabels: Record<string, string> = {
 
       <!-- Tabs -->
       <div class="mb-4 flex gap-1 rounded-lg bg-muted p-1">
-        <button
-          class="flex-1 rounded-md py-2 text-sm font-medium transition-colors"
+        <button class="flex-1 rounded-md py-2 text-sm font-medium transition-colors"
+          :class="activeTab === 'overview' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'"
+          @click="activeTab = 'overview'">
+          <ChartPie :size="14" class="mr-1 inline" /> Tổng thể
+        </button>
+        <button class="flex-1 rounded-md py-2 text-sm font-medium transition-colors"
           :class="activeTab === 'transactions' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'"
-          @click="activeTab = 'transactions'"
-        >
+          @click="activeTab = 'transactions'">
           <Receipt :size="14" class="mr-1 inline" /> Giao dịch
         </button>
-        <button
-          class="flex-1 rounded-md py-2 text-sm font-medium transition-colors"
+        <button class="flex-1 rounded-md py-2 text-sm font-medium transition-colors"
           :class="activeTab === 'members' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'"
-          @click="activeTab = 'members'"
-        >
+          @click="activeTab = 'members'">
           <Users :size="14" class="mr-1 inline" /> Thành viên
-        </button>
-        <button
-          class="flex-1 rounded-md py-2 text-sm font-medium transition-colors"
-          :class="activeTab === 'settle' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'"
-          @click="activeTab = 'settle'"
-        >
-          <Scale :size="14" class="mr-1 inline" /> Tất toán
         </button>
       </div>
 
@@ -134,18 +139,30 @@ const typeLabels: Record<string, string> = {
               {{ formatDate(date, 'long') }}
             </div>
             <div class="space-y-2">
-              <Card v-for="tx in txs" :key="tx.id" class="flex items-center gap-3 !p-3" :class="isReadOnly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:bg-muted/50'" @click="!isReadOnly && router.push(`/trip/${tripId}/transaction/${tx.id}/edit`)">
+              <Card v-for="tx in txs" :key="tx.id" class="flex items-center gap-3 !p-3"
+                :class="isReadOnly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:bg-muted/50'"
+                @click="!isReadOnly && router.push(`/trip/${tripId}/transaction/${tx.id}/edit`)">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
                   <component :is="categoryIcons[tx.category] ?? Package" :size="18" class="text-muted-foreground" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="truncate text-sm font-medium">{{ tx.description }}</span>
-                    <span class="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    <span v-if="tx.type !== 'income'" class="truncate text-sm font-medium">{{ tx.description }}</span>
+                    <span class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                      :class="typeTagColors[tx.type] || 'bg-muted text-muted-foreground'">
                       {{ typeLabels[tx.type] }}
                     </span>
                   </div>
-                  <div class="text-xs text-muted-foreground">{{ tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by) }} đã trả · {{ formatTime(tx.created_at) }}</div>
+                  <div class="text-xs text-muted-foreground">
+                    <template v-if="tx.type === 'personal_expense'">
+                      {{ getMemberName(tx.paid_by) }} đã trả · Chi cho {{getMemberName((tripStore.splits?.filter?.(s =>
+                        s.transaction_id === tx.id)?.[0]?.member_id) || '...')}} · {{ formatTime(tx.created_at) }}
+                    </template>
+                    <template v-else>
+                      {{ tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by) }} đã trả · {{
+                        formatTime(tx.created_at) }}
+                    </template>
+                  </div>
                 </div>
                 <div class="shrink-0 text-right">
                   <div class="text-sm font-semibold">
@@ -165,47 +182,28 @@ const typeLabels: Record<string, string> = {
         </EmptyState>
 
         <!-- FAB -->
-        
+
       </div>
 
       <!-- Tab: Members -->
       <MemberTab v-if="activeTab === 'members'" :trip-id="tripId" :readonly="isReadOnly" />
 
-      <!-- Tab: Settle -->
-      <div v-if="activeTab === 'settle'">
-        <!-- Fund info -->
-        <div v-if="tripStore.fundBalance() > 0" class="mb-4 rounded-lg border border-border p-3">
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">Quỹ còn lại</span>
-            <span class="font-semibold text-primary">{{ formatCurrency(tripStore.fundBalance(), tripStore.currentTrip?.currency_code) }}</span>
+      <!-- Tab: Overview -->
+      <div v-if="activeTab === 'overview'">
+        <Card class="mb-4 p-6 bg-gradient-to-br from-blue-50 to-green-50">
+          <div class="mb-3 flex items-center justify-between text-base font-bold text-blue-900">
+            <span>Tổng thu</span>
+            <span>{{ formatCurrency(totalIncome, tripStore.currentTrip.currency_code) }}</span>
           </div>
-          <div v-for="r in tripStore.fundRefunds()" :key="r.member.id" class="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Hoàn {{ r.member.display_name }}</span>
-            <span class="font-medium text-emerald-600">+{{ formatCurrency(r.amount, tripStore.currentTrip?.currency_code) }}</span>
+          <div class="mb-3 flex items-center justify-between text-base font-bold text-red-700">
+            <span>Tổng chi</span>
+            <span>{{ formatCurrency(totalSpent, tripStore.currentTrip.currency_code) }}</span>
           </div>
-        </div>
-
-        <div v-if="tripStore.members.length > 1">
-          <h3 class="mb-3 text-sm font-semibold text-foreground">Ai nợ ai</h3>
-          <div class="space-y-2">
-            <Card v-for="debt in tripStore.optimizeDebts()" :key="`${debt.from.id}-${debt.to.id}`" class="!p-3">
-              <div class="flex items-center justify-between">
-                <div class="text-sm">
-                  <span class="font-medium text-destructive">{{ debt.from.display_name }}</span>
-                  <span class="mx-1 text-muted-foreground">→</span>
-                  <span class="font-medium text-primary">{{ debt.to.display_name }}</span>
-                </div>
-                <span class="font-semibold">
-                  {{ formatCurrency(debt.amount, tripStore.currentTrip?.currency_code) }}
-                </span>
-              </div>
-            </Card>
+          <div class="mb-1 flex items-center justify-between text-lg font-extrabold text-green-700">
+            <span>Tiền còn lại</span>
+            <span>{{ formatCurrency(fundRemaining, tripStore.currentTrip.currency_code) }}</span>
           </div>
-          <div v-if="tripStore.optimizeDebts().length === 0" class="mt-4 text-center text-sm text-muted-foreground">
-            Không có nợ — tất cả đã cân bằng! 🎉
-          </div>
-        </div>
-        <EmptyState v-else message="Cần ít nhất 2 thành viên để tính nợ" />
+        </Card>
       </div>
     </template>
 
