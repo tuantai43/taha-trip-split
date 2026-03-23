@@ -33,13 +33,13 @@ const totalSharedExpense = computed(() =>
 const numMembers = computed(() => tripStore.calculateBalances().length)
 const perMemberShared = computed(() => numMembers.value > 0 ? Math.round(totalSharedExpense.value / numMembers.value) : 0)
 
-// Tổng chi riêng của 1 thành viên (là người được chi trong split của personal_expense)
+// Đã loại bỏ chi riêng
 const personalExpense = (memberId: string) =>
   tripStore.splits
     .filter((split) => split.member_id === memberId)
     .map((split) => {
       const tx = tripStore.transactions.find((t) => t.id === split.transaction_id)
-      return tx && tx.type === 'personal_expense' ? split.amount : 0
+      return 0
     })
     .reduce((sum, amount) => sum + amount, 0)
 
@@ -54,7 +54,7 @@ const totalDeposited = (memberId: string) =>
     .filter(
       (tx) =>
         (tx.type === 'income' && tx.paid_by === memberId) ||
-        ((tx.type === 'shared_expense' || tx.type === 'personal_expense') && tx.paid_by === memberId && !tx.paid_from_fund)
+        (tx.type === 'shared_expense' && tx.paid_by === memberId && !tx.paid_from_fund)
     )
     .reduce((sum, tx) => sum + tx.amount, 0)
 
@@ -89,7 +89,7 @@ async function handleDeleteTrip() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 pt-4 pb-20">
+  <div class="mx-auto max-w-lg p-4">
     <!-- Header -->
     <div class="mb-6 flex items-center gap-3">
       <button class="rounded-lg p-1 hover:bg-muted" @click="router.back()">

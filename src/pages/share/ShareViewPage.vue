@@ -82,7 +82,7 @@ function calculateDebts() {
     balanceMap.set(m.id, 0)
   }
   for (const tx of transactions.value) {
-    if (tx.type === 'transfer') continue
+    // Đã loại bỏ transfer
     const current = balanceMap.get(tx.paid_by) ?? 0
     balanceMap.set(tx.paid_by, current + tx.amount)
     if (tx.transaction_splits) {
@@ -174,7 +174,8 @@ const groupedTxByDate = computed(() => {
                     {{ memberName(tx.paid_by) }} trả
                     <template v-if="tx.transaction_splits?.length > 1">
                       • Chia {{ tx.transaction_splits.length }}:
-                      {{ formatCurrency(Math.round(tx.amount / tx.transaction_splits.length), trip.currency_code ?? 'VND') }}/người
+                      {{ formatCurrency(Math.round(tx.amount / tx.transaction_splits.length), trip.currency_code ??
+                      'VND') }}/người
                     </template>
                   </p>
                 </div>

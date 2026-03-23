@@ -28,7 +28,7 @@ const totalDeposited = (memberId: string) => {
     .filter(
       (tx) =>
         (tx.type === 'income' && tx.paid_by === memberId) ||
-        ((tx.type === 'shared_expense' || tx.type === 'personal_expense') && tx.paid_by === memberId && !tx.paid_from_fund)
+        (tx.type === 'shared_expense' && tx.paid_by === memberId && !tx.paid_from_fund)
     )
     .reduce((sum, tx) => sum + tx.amount, 0)
 }

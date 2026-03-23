@@ -1,11 +1,7 @@
 // ─── Enums ─────────────────────────────────────────────
 export type TripStatus = "draft" | "active" | "settled" | "archived";
 export type MemberRole = "owner" | "member";
-export type TransactionType =
-  | "shared_expense"
-  | "personal_expense"
-  | "transfer"
-  | "income";
+export type TransactionType = "shared_expense" | "income";
 export type SplitMethod = "equal" | "exact" | "percentage" | "shares";
 export type Category =
   | "food"

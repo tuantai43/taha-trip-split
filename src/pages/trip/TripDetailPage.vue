@@ -1,10 +1,8 @@
 <script setup lang="ts">
 // Tag màu cho loại giao dịch
 const typeTagColors: Record<string, string> = {
-  shared_expense: 'bg-green-100 text-green-700',
-  personal_expense: 'bg-yellow-100 text-yellow-700',
-  income: 'bg-blue-100 text-blue-700',
-  transfer: 'bg-gray-100 text-gray-500',
+  shared_expense: 'bg-red-100 text-red-700', // Chi: đỏ
+  income: 'bg-green-100 text-green-700',     // Thu: xanh lá
 }
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -45,7 +43,7 @@ onMounted(() => {
 
 const totalIncome = computed(() =>
   tripStore.transactions
-    .filter((tx) => tx.type === 'income' || (!tx.paid_from_fund && (tx.type === 'shared_expense' || tx.type === 'personal_expense')))
+    .filter((tx) => tx.type === 'income' || (!tx.paid_from_fund && tx.type === 'shared_expense'))
     .reduce((sum, tx) => sum + tx.amount, 0)
 )
 
@@ -53,7 +51,7 @@ const fundRemaining = computed(() => tripStore.fundBalance())
 
 const totalSpent = computed(() =>
   tripStore.transactions
-    .filter((tx) => tx.type === 'shared_expense' || tx.type === 'personal_expense')
+    .filter((tx) => tx.type === 'shared_expense')
     .reduce((sum, tx) => sum + tx.amount, 0),
 )
 
@@ -87,15 +85,26 @@ function getTransactionsByDate() {
 }
 
 const typeLabels: Record<string, string> = {
-  shared_expense: 'Chi chung',
-  personal_expense: 'Chi riêng',
-  transfer: 'Chuyển khoản',
-  income: 'Ghi có',
+  shared_expense: 'Chi',
+  income: 'Thu',
+}
+
+function getSplitMembersLabel(tx: any) {
+  if (tx.type !== 'shared_expense') return ''
+  const splits = tripStore.splits.filter(s => s.transaction_id === tx.id)
+  const memberIds = splits.map(s => s.member_id)
+  const allMemberIds = tripStore.members.map(m => m.id)
+  if (memberIds.length === allMemberIds.length && memberIds.every(id => allMemberIds.includes(id))) {
+    return 'tất cả'
+  }
+  const names = memberIds.map(id => getMemberName(id))
+  if (names.length <= 3) return names.join(', ')
+  return names.slice(0, 3).join(', ') + ` + ${names.length - 3} thành viên khác`
 }
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 pt-4">
+  <div class="mx-auto max-w-lg p-4">
     <LoadingSpinner v-if="tripStore.loading && !tripStore.currentTrip" />
 
     <template v-else-if="tripStore.currentTrip">
@@ -154,13 +163,12 @@ const typeLabels: Record<string, string> = {
                     </span>
                   </div>
                   <div class="text-xs text-muted-foreground">
-                    <template v-if="tx.type === 'personal_expense'">
-                      {{ getMemberName(tx.paid_by) }} đã trả · Chi cho {{getMemberName((tripStore.splits?.filter?.(s =>
-                        s.transaction_id === tx.id)?.[0]?.member_id) || '...')}} · {{ formatTime(tx.created_at) }}
+                    <template v-if="tx.type === 'shared_expense'">
+                      {{ tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by) }} đã trả cho {{
+                        getSplitMembersLabel(tx) }} · {{ formatTime(tx.created_at) }}
                     </template>
-                    <template v-else>
-                      {{ tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by) }} đã trả · {{
-                        formatTime(tx.created_at) }}
+                    <template v-else-if="tx.type === 'income'">
+                      {{ getMemberName(tx.paid_by) }} đã nạp · {{ formatTime(tx.created_at) }}
                     </template>
                   </div>
                 </div>

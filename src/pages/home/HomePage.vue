@@ -36,7 +36,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 pt-4">
+  <div class="mx-auto max-w-lg px-4 py-4">
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
       <div>
@@ -50,18 +50,14 @@ const statusLabels: Record<string, { label: string; color: string }> = {
     <div v-else>
       <!-- Tabs -->
       <div class="mb-4 flex gap-2">
-        <button
-          class="rounded px-3 py-1 text-sm font-medium"
+        <button class="rounded px-3 py-1 text-sm font-medium"
           :class="tab === 'active' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'"
-          @click="tab = 'active'"
-        >
+          @click="tab = 'active'">
           Đang diễn ra
         </button>
-        <button
-          class="rounded px-3 py-1 text-sm font-medium"
+        <button class="rounded px-3 py-1 text-sm font-medium"
           :class="tab === 'archived' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'"
-          @click="tab = 'archived'"
-        >
+          @click="tab = 'archived'">
           Đã kết thúc
         </button>
       </div>
@@ -69,12 +65,9 @@ const statusLabels: Record<string, { label: string; color: string }> = {
       <!-- Trip list: Active -->
       <div v-if="tab === 'active'">
         <div v-if="tripStore.trips.filter(t => t.status !== 'archived').length > 0" class="space-y-3">
-          <Card
-            v-for="trip in tripStore.trips.filter((t) => t.status !== 'archived')"
-            :key="trip.id"
+          <Card v-for="trip in tripStore.trips.filter((t) => t.status !== 'archived')" :key="trip.id"
             class="cursor-pointer transition-shadow hover:shadow-md active:scale-[0.99]"
-            @click="router.push(`/trip/${trip.id}`)"
-          >
+            @click="router.push(`/trip/${trip.id}`)">
             <div class="flex items-start justify-between">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
@@ -91,10 +84,8 @@ const statusLabels: Record<string, { label: string; color: string }> = {
                 </div>
               </div>
 
-              <span
-                class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                :class="statusLabels[trip.status]?.color"
-              >
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="statusLabels[trip.status]?.color">
                 {{ statusLabels[trip.status]?.label }}
               </span>
             </div>
@@ -115,12 +106,9 @@ const statusLabels: Record<string, { label: string; color: string }> = {
       <!-- Trip list: Archived -->
       <div v-if="tab === 'archived'">
         <div v-if="tripStore.trips.filter(t => t.status === 'archived').length > 0" class="space-y-3">
-          <Card
-            v-for="trip in tripStore.trips.filter((t) => t.status === 'archived')"
-            :key="trip.id"
+          <Card v-for="trip in tripStore.trips.filter((t) => t.status === 'archived')" :key="trip.id"
             class="cursor-pointer transition-shadow hover:shadow-md active:scale-[0.99]"
-            @click="router.push(`/trip/${trip.id}`)"
-          >
+            @click="router.push(`/trip/${trip.id}`)">
             <div class="flex items-start justify-between">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
@@ -137,10 +125,8 @@ const statusLabels: Record<string, { label: string; color: string }> = {
                 </div>
               </div>
 
-              <span
-                class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                :class="statusLabels[trip.status]?.color"
-              >
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="statusLabels[trip.status]?.color">
                 {{ statusLabels[trip.status]?.label }}
               </span>
             </div>

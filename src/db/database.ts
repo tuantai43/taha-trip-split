@@ -44,7 +44,7 @@ interface DexieTransaction {
   exchangeRate: number;
   description: string;
   category: string;
-  type: "shared_expense" | "personal_expense" | "transfer" | "income";
+  type: "shared_expense" | "income";
   splitMethod: "equal" | "exact" | "percentage" | "shares";
   paidFromFund: boolean;
   transactionDate: string;
