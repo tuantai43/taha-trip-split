@@ -11,10 +11,12 @@ import Card from '@/components/ui/Card.vue'
 import { formatCurrency, formatDate, formatTime } from '@/lib/utils'
 import MemberTab from '@/pages/trip/MemberTab.vue'
 import { useTripStore } from '@/stores/tripStore'
+import { useUiStore } from '@/stores/uiStore'
 import {
   ArrowLeft,
   Car,
   ChartPie,
+  Copy,
   Hotel,
   Package,
   PartyPopper,
@@ -33,6 +35,7 @@ import { useRouter } from 'vue-router'
 const props = defineProps<{ tripId: string }>()
 const router = useRouter()
 const tripStore = useTripStore()
+const ui = useUiStore()
 
 const activeTab = ref<'overview' | 'transactions' | 'members'>('overview')
 const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
@@ -70,6 +73,10 @@ function getMemberName(memberId: string) {
   return tripStore.members.find((m) => m.id === memberId)?.display_name ?? 'Ai đó'
 }
 
+function getPayerLabel(tx: { paid_by: string; paid_from_fund: boolean }) {
+  return tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by)
+}
+
 function getTransactionsByDate() {
   const grouped = new Map<string, typeof tripStore.transactions>()
   const sorted = [...tripStore.transactions].sort(
@@ -100,6 +107,67 @@ function getSplitMembersLabel(tx: any) {
   const names = memberIds.map(id => getMemberName(id))
   if (names.length <= 3) return names.join(', ')
   return names.slice(0, 3).join(', ') + ` + ${names.length - 3} thành viên khác`
+}
+
+function sanitizeClipboardCell(value: string | number | boolean | null | undefined) {
+  return String(value ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ')
+}
+
+function buildTransactionsClipboardText() {
+  const rows = [
+    [
+      'Ngày',
+      'Giờ',
+      'Loại',
+      'Mô tả',
+      'Danh mục',
+      'Số tiền',
+      'Tiền tệ',
+      'Người trả',
+      'Từ quỹ',
+      'Chia cho',
+    ],
+  ]
+
+  const sortedTransactions = [...tripStore.transactions].sort(
+    (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime(),
+  )
+
+  for (const tx of sortedTransactions) {
+    const splitNames = tripStore.splits
+      .filter(split => split.transaction_id === tx.id)
+      .map(split => getMemberName(split.member_id))
+      .join(', ')
+
+    rows.push([
+      sanitizeClipboardCell(formatDate(tx.transaction_date, 'long')),
+      sanitizeClipboardCell(formatTime(tx.transaction_date)),
+      sanitizeClipboardCell(typeLabels[tx.type] ?? tx.type),
+      sanitizeClipboardCell(tx.description),
+      sanitizeClipboardCell(tx.category),
+      sanitizeClipboardCell(tx.amount),
+      sanitizeClipboardCell(tx.currency_code),
+      sanitizeClipboardCell(getPayerLabel(tx)),
+      sanitizeClipboardCell(tx.paid_from_fund ? 'Có' : 'Không'),
+      sanitizeClipboardCell(splitNames),
+    ])
+  }
+
+  return rows.map(row => row.join('\t')).join('\n')
+}
+
+async function handleCopyTransactions() {
+  if (tripStore.transactions.length === 0) {
+    ui.showToast('Chưa có giao dịch để copy', 'info')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(buildTransactionsClipboardText())
+    ui.showToast('Đã copy danh sách giao dịch để dán vào Excel', 'success')
+  } catch {
+    ui.showToast('Không thể copy vào clipboard', 'error')
+  }
 }
 </script>
 
@@ -142,6 +210,12 @@ function getSplitMembersLabel(tx: any) {
 
       <!-- Tab: Transactions -->
       <div v-if="activeTab === 'transactions'">
+        <div v-if="tripStore.transactions.length > 0" class="mb-3 flex justify-end">
+          <Button variant="outline" size="sm" @click="handleCopyTransactions">
+            <Copy :size="16" class="mr-1" />
+            Copy Excel
+          </Button>
+        </div>
         <div v-if="tripStore.transactions.length > 0">
           <template v-for="[date, txs] in getTransactionsByDate()" :key="date">
             <div class="mb-1 mt-4 text-xs font-medium text-muted-foreground">
@@ -164,7 +238,7 @@ function getSplitMembersLabel(tx: any) {
                   </div>
                   <div class="text-xs text-muted-foreground">
                     <template v-if="tx.type === 'shared_expense'">
-                      {{ tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by) }} đã trả cho {{
+                      {{ getPayerLabel(tx) }} đã trả cho {{
                         getSplitMembersLabel(tx) }} · {{ formatTime(tx.transaction_date) }}
                     </template>
                     <template v-else-if="tx.type === 'income'">
