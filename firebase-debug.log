@@ -1,0 +1,224 @@
+[debug] [2026-03-23T09:47:49.400Z] ----------------------------------------------------------------------
+[debug] [2026-03-23T09:47:49.407Z] Command:       /opt/homebrew/Cellar/node/25.2.1/bin/node /opt/homebrew/bin/firebase deploy --only firestore:rules --project taha-tripsplit-61618
+[debug] [2026-03-23T09:47:49.407Z] CLI Version:   15.5.1
+[debug] [2026-03-23T09:47:49.407Z] Platform:      darwin
+[debug] [2026-03-23T09:47:49.407Z] Node Version:  v25.2.1
+[debug] [2026-03-23T09:47:49.408Z] Time:          Mon Mar 23 2026 16:47:49 GMT+0700 (Indochina Time)
+[debug] [2026-03-23T09:47:49.408Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-23T09:47:49.409Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-03-23T09:47:50.667Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-23T09:47:50.667Z] > authorizing via signed-in user (tuantai431997@gmail.com)
+[debug] [2026-03-23T09:47:50.668Z] [iam] checking project taha-tripsplit-61618 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-23T09:47:50.668Z] Checked if tokens are valid: false, expires at: 1773500277288
+[debug] [2026-03-23T09:47:50.668Z] Checked if tokens are valid: false, expires at: 1773500277288
+[debug] [2026-03-23T09:47:50.668Z] > refreshing access token with scopes: []
+[debug] [2026-03-23T09:47:50.669Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-23T09:47:50.669Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-23T09:47:50.926Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-23T09:47:50.926Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-23T09:47:50.940Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions [none]
+[debug] [2026-03-23T09:47:50.940Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions  x-goog-user-project=taha-tripsplit-61618
+[debug] [2026-03-23T09:47:50.941Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-23T09:47:51.330Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-03-23T09:47:51.331Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-03-23T09:47:52.085Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions 200
+[debug] [2026-03-23T09:47:52.085Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'taha-tripsplit-61618'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-23T09:47:52.088Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:52.088Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:52.088Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/taha-tripsplit-61618/services/firestore.googleapis.com [none]
+[debug] [2026-03-23T09:47:52.088Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/taha-tripsplit-61618/services/firestore.googleapis.com  x-goog-user-project=taha-tripsplit-61618
+[debug] [2026-03-23T09:47:53.446Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/taha-tripsplit-61618/services/firestore.googleapis.com 200
+[debug] [2026-03-23T09:47:53.446Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/taha-tripsplit-61618/services/firestore.googleapis.com [omitted]
+[info] ✔  firestore: required API firestore.googleapis.com is enabled 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-23T09:47:53.453Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:53.453Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:53.453Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) [none]
+[debug] [2026-03-23T09:47:54.185Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) 200
+[debug] [2026-03-23T09:47:54.185Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) {"name":"projects/taha-tripsplit-61618/databases/(default)","uid":"a1645976-1343-4e6b-be7e-01ebe628f23d","createTime":"2026-03-23T06:13:26.055669Z","updateTime":"2026-03-23T06:13:26.055669Z","locationId":"asia-southeast1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-23T08:47:54.103270Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"zas","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"ILLtlu7etZMDMLK99PautZMD"}
+[info] i  cloud.firestore: checking firebase.rules for compilation errors... 
+[debug] [2026-03-23T09:47:54.185Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:54.185Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:54.186Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test [none]
+[debug] [2026-03-23T09:47:54.186Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test [omitted]
+[debug] [2026-03-23T09:47:55.483Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test 200
+[debug] [2026-03-23T09:47:55.483Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test {}
+[info] ✔  cloud.firestore: rules file firebase.rules compiled successfully 
+[debug] [2026-03-23T09:47:55.484Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:55.484Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:55.485Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases pageSize=10&pageToken=
+[debug] [2026-03-23T09:47:56.651Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases 200
+[debug] [2026-03-23T09:47:56.651Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases {"releases":[{"name":"projects/taha-tripsplit-61618/releases/cloud.firestore","rulesetName":"projects/taha-tripsplit-61618/rulesets/e60df38b-342f-4996-aeb6-0b788924a702","createTime":"2026-03-23T06:13:29.618735Z","updateTime":"2026-03-23T06:13:29.618735Z"}]}
+[debug] [2026-03-23T09:47:56.651Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:56.651Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:56.651Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/e60df38b-342f-4996-aeb6-0b788924a702 [none]
+[debug] [2026-03-23T09:47:57.851Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/e60df38b-342f-4996-aeb6-0b788924a702 200
+[debug] [2026-03-23T09:47:57.851Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/e60df38b-342f-4996-aeb6-0b788924a702 [omitted]
+[info] i  firestore: uploading rules firebase.rules... 
+[debug] [2026-03-23T09:47:57.852Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:57.852Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:57.852Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets [none]
+[debug] [2026-03-23T09:47:57.852Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets [omitted]
+[debug] [2026-03-23T09:47:59.091Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets 200
+[debug] [2026-03-23T09:47:59.091Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets {"name":"projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function signedIn() {\n      return request.auth != null;\n    }\n\n    function isOwner(tripId) {\n      return signedIn() &&\n        get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid;\n    }\n\n    match /users/{userId} {\n      allow read, delete: if signedIn() && request.auth.uid == userId;\n      allow create: if signedIn() &&\n        request.auth.uid == userId &&\n        request.resource.data.email is string &&\n        request.resource.data.displayName is string;\n      allow update: if signedIn() &&\n        request.auth.uid == userId &&\n        (!('email' in request.resource.data) || request.resource.data.email is string) &&\n        (!('displayName' in request.resource.data) || request.resource.data.displayName is string) &&\n        (!('avatarUrl' in request.resource.data) || request.resource.data.avatarUrl == null || request.resource.data.avatarUrl is string);\n    }\n\n    match /trips/{tripId} {\n      allow read, delete: if isOwner(tripId);\n      allow create: if signedIn() &&\n        request.resource.data.createdBy == request.auth.uid &&\n        request.resource.data.name is string &&\n        request.resource.data.currencyCode is string &&\n        request.resource.data.status is string &&\n        request.resource.data.shareEnabled is bool;\n      allow update: if isOwner(tripId) &&\n        request.resource.data.createdBy == resource.data.createdBy;\n    }\n\n    match /trips/{tripId}/members/{memberId} {\n      allow read, write: if isOwner(tripId);\n    }\n\n    match /trips/{tripId}/transactions/{transactionId} {\n      allow read, write: if isOwner(tripId);\n    }\n\n    match /trips/{tripId}/transactions/{transactionId}/splits/{splitId} {\n      allow read, write: if isOwner(tripId);\n    }\n  }\n}\n","name":"firebase.rules"}]},"createTime":"2026-03-23T09:47:58.978239Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-23T09:47:59.091Z] [rules] created ruleset projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee
+[debug] [2026-03-23T09:47:59.092Z] [rules] releasing cloud.firestore/(default) with ruleset projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee
+[debug] [2026-03-23T09:47:59.092Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:59.092Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T09:47:59.092Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-23T09:47:59.092Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) {"release":{"name":"projects/taha-tripsplit-61618/releases/cloud.firestore/(default)","rulesetName":"projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee"}}
+[debug] [2026-03-23T09:48:00.347Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) 200
+[debug] [2026-03-23T09:48:00.347Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) {"name":"projects/taha-tripsplit-61618/releases/cloud.firestore","rulesetName":"projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee","createTime":"2026-03-23T06:13:29.618735Z","updateTime":"2026-03-23T09:48:00.249007Z"}
+[debug] [2026-03-23T09:48:00.347Z] [rules] updated release projects/taha-tripsplit-61618/releases/cloud.firestore
+[info] ✔  firestore: released rules firebase.rules to cloud.firestore 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/taha-tripsplit-61618/overview
+[debug] [2026-03-23T10:23:01.070Z] ----------------------------------------------------------------------
+[debug] [2026-03-23T10:23:01.072Z] Command:       /opt/homebrew/Cellar/node/25.2.1/bin/node /opt/homebrew/bin/firebase deploy --only firestore:rules --project taha-tripsplit-61618
+[debug] [2026-03-23T10:23:01.072Z] CLI Version:   15.5.1
+[debug] [2026-03-23T10:23:01.072Z] Platform:      darwin
+[debug] [2026-03-23T10:23:01.072Z] Node Version:  v25.2.1
+[debug] [2026-03-23T10:23:01.072Z] Time:          Mon Mar 23 2026 17:23:01 GMT+0700 (Indochina Time)
+[debug] [2026-03-23T10:23:01.072Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-23T10:23:02.064Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-23T10:23:02.065Z] > authorizing via signed-in user (tuantai431997@gmail.com)
+[debug] [2026-03-23T10:23:02.065Z] [iam] checking project taha-tripsplit-61618 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-23T10:23:02.066Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:02.066Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:02.066Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions [none]
+[debug] [2026-03-23T10:23:02.066Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions  x-goog-user-project=taha-tripsplit-61618
+[debug] [2026-03-23T10:23:02.066Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-23T10:23:03.246Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions 200
+[debug] [2026-03-23T10:23:03.246Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'taha-tripsplit-61618'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-23T10:23:03.248Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:03.248Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:03.248Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) [none]
+[debug] [2026-03-23T10:23:03.743Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) 200
+[debug] [2026-03-23T10:23:03.743Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) {"name":"projects/taha-tripsplit-61618/databases/(default)","uid":"a1645976-1343-4e6b-be7e-01ebe628f23d","createTime":"2026-03-23T06:13:26.055669Z","updateTime":"2026-03-23T06:13:26.055669Z","locationId":"asia-southeast1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-23T09:23:03.729934Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"zas","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IPqfkNzmtZMDMIDbmJLjtZMD"}
+[info] i  cloud.firestore: checking firebase.rules for compilation errors... 
+[debug] [2026-03-23T10:23:03.745Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:03.745Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:03.745Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test [none]
+[debug] [2026-03-23T10:23:03.745Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test [omitted]
+[debug] [2026-03-23T10:23:05.238Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test 200
+[debug] [2026-03-23T10:23:05.238Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test {}
+[info] ✔  cloud.firestore: rules file firebase.rules compiled successfully 
+[debug] [2026-03-23T10:23:05.239Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:05.239Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:05.239Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases pageSize=10&pageToken=
+[debug] [2026-03-23T10:23:06.379Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases 200
+[debug] [2026-03-23T10:23:06.379Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases {"releases":[{"name":"projects/taha-tripsplit-61618/releases/cloud.firestore","rulesetName":"projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee","createTime":"2026-03-23T06:13:29.618735Z","updateTime":"2026-03-23T09:48:00.249007Z"}]}
+[debug] [2026-03-23T10:23:06.379Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:06.379Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:06.379Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee [none]
+[debug] [2026-03-23T10:23:07.557Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee 200
+[debug] [2026-03-23T10:23:07.557Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/12c83df7-bd61-4a5d-9172-654df91b53ee [omitted]
+[info] i  firestore: uploading rules firebase.rules... 
+[debug] [2026-03-23T10:23:07.558Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:07.558Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:07.558Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets [none]
+[debug] [2026-03-23T10:23:07.558Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets [omitted]
+[debug] [2026-03-23T10:23:08.773Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets 200
+[debug] [2026-03-23T10:23:08.773Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets {"name":"projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function signedIn() {\n      return request.auth != null;\n    }\n\n    function isOwner(tripId) {\n      return signedIn() &&\n        get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid;\n    }\n\n    function validMemberRole(role) {\n      return role == \"owner\" || role == \"member\";\n    }\n\n    function validTripStatus(status) {\n      return status == \"draft\" ||\n        status == \"active\" ||\n        status == \"settled\" ||\n        status == \"archived\";\n    }\n\n    match /users/{userId} {\n      allow read, delete: if signedIn() && request.auth.uid == userId;\n      allow create: if signedIn() &&\n        request.auth.uid == userId &&\n        request.resource.data.email is string &&\n        request.resource.data.displayName is string;\n      allow update: if signedIn() &&\n        request.auth.uid == userId &&\n        (!('email' in request.resource.data) || request.resource.data.email is string) &&\n        (!('displayName' in request.resource.data) || request.resource.data.displayName is string) &&\n        (!('avatarUrl' in request.resource.data) || request.resource.data.avatarUrl == null || request.resource.data.avatarUrl is string);\n    }\n\n    match /trips/{tripId} {\n      allow read, delete: if isOwner(tripId);\n      allow create: if signedIn() &&\n        request.resource.data.createdBy == request.auth.uid &&\n        request.resource.data.name is string &&\n        request.resource.data.currencyCode is string &&\n        validTripStatus(request.resource.data.status) &&\n        request.resource.data.shareEnabled is bool;\n      allow update: if isOwner(tripId) &&\n        request.resource.data.createdBy == resource.data.createdBy &&\n        validTripStatus(request.resource.data.status);\n    }\n\n    match /trips/{tripId}/members/{memberId} {\n      allow read: if isOwner(tripId);\n      allow create, update: if isOwner(tripId) &&\n        request.resource.data.displayName is string &&\n        validMemberRole(request.resource.data.role) &&\n        request.resource.data.isGuest is bool &&\n        (\n          request.resource.data.role == \"member\" ||\n          (\n            request.resource.data.role == \"owner\" &&\n            request.resource.data.userId == request.auth.uid &&\n            request.resource.data.isGuest == false\n          )\n        );\n      allow delete: if isOwner(tripId);\n    }\n\n    match /trips/{tripId}/transactions/{transactionId} {\n      allow read, write: if isOwner(tripId);\n    }\n\n    match /trips/{tripId}/transactions/{transactionId}/splits/{splitId} {\n      allow read, write: if isOwner(tripId);\n    }\n  }\n}\n","name":"firebase.rules"}]},"createTime":"2026-03-23T10:23:08.661647Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-23T10:23:08.773Z] [rules] created ruleset projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3
+[debug] [2026-03-23T10:23:08.774Z] [rules] releasing cloud.firestore/(default) with ruleset projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3
+[debug] [2026-03-23T10:23:08.774Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:08.774Z] Checked if tokens are valid: true, expires at: 1774262869926
+[debug] [2026-03-23T10:23:08.774Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-23T10:23:08.774Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) {"release":{"name":"projects/taha-tripsplit-61618/releases/cloud.firestore/(default)","rulesetName":"projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3"}}
+[debug] [2026-03-23T10:23:09.917Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) 200
+[debug] [2026-03-23T10:23:09.917Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) {"name":"projects/taha-tripsplit-61618/releases/cloud.firestore","rulesetName":"projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3","createTime":"2026-03-23T06:13:29.618735Z","updateTime":"2026-03-23T10:23:09.817439Z"}
+[debug] [2026-03-23T10:23:09.918Z] [rules] updated release projects/taha-tripsplit-61618/releases/cloud.firestore
+[info] ✔  firestore: released rules firebase.rules to cloud.firestore 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/taha-tripsplit-61618/overview
+[debug] [2026-03-23T10:33:20.946Z] ----------------------------------------------------------------------
+[debug] [2026-03-23T10:33:20.948Z] Command:       /opt/homebrew/Cellar/node/25.2.1/bin/node /opt/homebrew/bin/firebase deploy --only firestore:rules --project taha-tripsplit-61618
+[debug] [2026-03-23T10:33:20.949Z] CLI Version:   15.5.1
+[debug] [2026-03-23T10:33:20.949Z] Platform:      darwin
+[debug] [2026-03-23T10:33:20.949Z] Node Version:  v25.2.1
+[debug] [2026-03-23T10:33:20.949Z] Time:          Mon Mar 23 2026 17:33:20 GMT+0700 (Indochina Time)
+[debug] [2026-03-23T10:33:20.949Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-23T10:33:22.203Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-23T10:33:22.204Z] > authorizing via signed-in user (tuantai431997@gmail.com)
+[debug] [2026-03-23T10:33:22.204Z] [iam] checking project taha-tripsplit-61618 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-23T10:33:22.205Z] Checked if tokens are valid: false, expires at: 1774262869926
+[debug] [2026-03-23T10:33:22.205Z] Checked if tokens are valid: false, expires at: 1774262869926
+[debug] [2026-03-23T10:33:22.205Z] > refreshing access token with scopes: []
+[debug] [2026-03-23T10:33:22.206Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-23T10:33:22.207Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-23T10:33:22.546Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-23T10:33:22.546Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-23T10:33:22.555Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions [none]
+[debug] [2026-03-23T10:33:22.555Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions  x-goog-user-project=taha-tripsplit-61618
+[debug] [2026-03-23T10:33:22.555Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-23T10:33:23.590Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions 200
+[debug] [2026-03-23T10:33:23.590Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/taha-tripsplit-61618:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'taha-tripsplit-61618'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-23T10:33:23.592Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:23.592Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:23.592Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) [none]
+[debug] [2026-03-23T10:33:24.113Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) 200
+[debug] [2026-03-23T10:33:24.113Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/taha-tripsplit-61618/databases/(default) {"name":"projects/taha-tripsplit-61618/databases/(default)","uid":"a1645976-1343-4e6b-be7e-01ebe628f23d","createTime":"2026-03-23T06:13:26.055669Z","updateTime":"2026-03-23T06:13:26.055669Z","locationId":"asia-southeast1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-23T09:33:24.029732Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"zas","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"INus9IPptZMDMIDbmJLjtZMD"}
+[info] i  cloud.firestore: checking firebase.rules for compilation errors... 
+[debug] [2026-03-23T10:33:24.114Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:24.114Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:24.114Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test [none]
+[debug] [2026-03-23T10:33:24.114Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test [omitted]
+[debug] [2026-03-23T10:33:25.432Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test 200
+[debug] [2026-03-23T10:33:25.432Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618:test {}
+[info] ✔  cloud.firestore: rules file firebase.rules compiled successfully 
+[debug] [2026-03-23T10:33:25.434Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:25.434Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:25.435Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases pageSize=10&pageToken=
+[debug] [2026-03-23T10:33:26.550Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases 200
+[debug] [2026-03-23T10:33:26.550Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases {"releases":[{"name":"projects/taha-tripsplit-61618/releases/cloud.firestore","rulesetName":"projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3","createTime":"2026-03-23T06:13:29.618735Z","updateTime":"2026-03-23T10:23:09.817439Z"}]}
+[debug] [2026-03-23T10:33:26.550Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:26.550Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:26.551Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3 [none]
+[debug] [2026-03-23T10:33:27.642Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3 200
+[debug] [2026-03-23T10:33:27.642Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets/db6f7950-88ee-415f-a4b6-041ae1a19dc3 [omitted]
+[info] i  firestore: uploading rules firebase.rules... 
+[debug] [2026-03-23T10:33:27.643Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:27.643Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:27.643Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets [none]
+[debug] [2026-03-23T10:33:27.643Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets [omitted]
+[debug] [2026-03-23T10:33:28.836Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets 200
+[debug] [2026-03-23T10:33:28.836Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/rulesets {"name":"projects/taha-tripsplit-61618/rulesets/b54a0895-d83d-4065-9de5-32c9e1e1ea75","source":{"files":[{"content":"rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function signedIn() {\n      return request.auth != null;\n    }\n\n    function isOwner(tripId) {\n      return signedIn() &&\n        get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid;\n    }\n\n    function validMemberRole(role) {\n      return role == \"owner\" || role == \"member\";\n    }\n\n    function validTripStatus(status) {\n      return status == \"draft\" ||\n        status == \"active\" ||\n        status == \"settled\" ||\n        status == \"archived\";\n    }\n\n    match /users/{userId} {\n      allow read, delete: if signedIn() && request.auth.uid == userId;\n      allow create: if signedIn() &&\n        request.auth.uid == userId &&\n        request.resource.data.email is string &&\n        request.resource.data.displayName is string;\n      allow update: if signedIn() &&\n        request.auth.uid == userId &&\n        (!('email' in request.resource.data) || request.resource.data.email is string) &&\n        (!('displayName' in request.resource.data) || request.resource.data.displayName is string) &&\n        (!('avatarUrl' in request.resource.data) || request.resource.data.avatarUrl == null || request.resource.data.avatarUrl is string);\n    }\n\n    match /trips/{tripId} {\n      allow read: if signedIn() && resource.data.createdBy == request.auth.uid;\n      allow delete: if isOwner(tripId);\n      allow create: if signedIn() &&\n        request.resource.data.createdBy == request.auth.uid &&\n        request.resource.data.name is string &&\n        request.resource.data.currencyCode is string &&\n        validTripStatus(request.resource.data.status) &&\n        request.resource.data.shareEnabled is bool;\n      allow update: if isOwner(tripId) &&\n        request.resource.data.createdBy == resource.data.createdBy &&\n        validTripStatus(request.resource.data.status);\n    }\n\n    match /trips/{tripId}/members/{memberId} {\n      allow read: if isOwner(tripId);\n      allow create, update: if isOwner(tripId) &&\n        request.resource.data.displayName is string &&\n        validMemberRole(request.resource.data.role) &&\n        request.resource.data.isGuest is bool &&\n        (\n          request.resource.data.role == \"member\" ||\n          (\n            request.resource.data.role == \"owner\" &&\n            request.resource.data.userId == request.auth.uid &&\n            request.resource.data.isGuest == false\n          )\n        );\n      allow delete: if isOwner(tripId);\n    }\n\n    match /trips/{tripId}/transactions/{transactionId} {\n      allow read, write: if isOwner(tripId);\n    }\n\n    match /trips/{tripId}/transactions/{transactionId}/splits/{splitId} {\n      allow read, write: if isOwner(tripId);\n    }\n  }\n}\n","name":"firebase.rules"}]},"createTime":"2026-03-23T10:33:28.709199Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2026-03-23T10:33:28.836Z] [rules] created ruleset projects/taha-tripsplit-61618/rulesets/b54a0895-d83d-4065-9de5-32c9e1e1ea75
+[debug] [2026-03-23T10:33:28.836Z] [rules] releasing cloud.firestore/(default) with ruleset projects/taha-tripsplit-61618/rulesets/b54a0895-d83d-4065-9de5-32c9e1e1ea75
+[debug] [2026-03-23T10:33:28.836Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:28.836Z] Checked if tokens are valid: true, expires at: 1774265601547
+[debug] [2026-03-23T10:33:28.837Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) [none]
+[debug] [2026-03-23T10:33:28.837Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) {"release":{"name":"projects/taha-tripsplit-61618/releases/cloud.firestore/(default)","rulesetName":"projects/taha-tripsplit-61618/rulesets/b54a0895-d83d-4065-9de5-32c9e1e1ea75"}}
+[debug] [2026-03-23T10:33:29.167Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) 200
+[debug] [2026-03-23T10:33:29.168Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/taha-tripsplit-61618/releases/cloud.firestore/(default) {"name":"projects/taha-tripsplit-61618/releases/cloud.firestore","rulesetName":"projects/taha-tripsplit-61618/rulesets/b54a0895-d83d-4065-9de5-32c9e1e1ea75","createTime":"2026-03-23T06:13:29.618735Z","updateTime":"2026-03-23T10:33:29.056543Z"}
+[debug] [2026-03-23T10:33:29.168Z] [rules] updated release projects/taha-tripsplit-61618/releases/cloud.firestore
+[info] ✔  firestore: released rules firebase.rules to cloud.firestore 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/taha-tripsplit-61618/overview

@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(tripId) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid;
+    }
+
+    function validMemberRole(role) {
+      return role == "owner" || role == "member";
+    }
+
+    function validTripStatus(status) {
+      return status == "draft" ||
+        status == "active" ||
+        status == "settled" ||
+        status == "archived";
+    }
+
+    match /users/{userId} {
+      allow read, delete: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.email is string &&
+        request.resource.data.displayName is string;
+      allow update: if signedIn() &&
+        request.auth.uid == userId &&
+        (!('email' in request.resource.data) || request.resource.data.email is string) &&
+        (!('displayName' in request.resource.data) || request.resource.data.displayName is string) &&
+        (!('avatarUrl' in request.resource.data) || request.resource.data.avatarUrl == null || request.resource.data.avatarUrl is string);
+    }
+
+    match /trips/{tripId} {
+      allow read: if signedIn() && resource.data.createdBy == request.auth.uid;
+      allow delete: if isOwner(tripId);
+      allow create: if signedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.name is string &&
+        request.resource.data.currencyCode is string &&
+        validTripStatus(request.resource.data.status) &&
+        request.resource.data.shareEnabled is bool;
+      allow update: if isOwner(tripId) &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        validTripStatus(request.resource.data.status);
+    }
+
+    match /trips/{tripId}/members/{memberId} {
+      allow read: if isOwner(tripId);
+      allow create, update: if isOwner(tripId) &&
+        request.resource.data.displayName is string &&
+        validMemberRole(request.resource.data.role) &&
+        request.resource.data.isGuest is bool &&
+        (
+          request.resource.data.role == "member" ||
+          (
+            request.resource.data.role == "owner" &&
+            request.resource.data.userId == request.auth.uid &&
+            request.resource.data.isGuest == false
+          )
+        );
+      allow delete: if isOwner(tripId);
+    }
+
+    match /trips/{tripId}/transactions/{transactionId} {
+      allow read, write: if isOwner(tripId);
+    }
+
+    match /trips/{tripId}/transactions/{transactionId}/splits/{splitId} {
+      allow read, write: if isOwner(tripId);
+    }
+  }
+}

@@ -18,8 +18,42 @@ const displayName = ref('')
 const submitting = ref(false)
 const errorMsg = ref('')
 
+async function resolveEmailAuthError(err: unknown) {
+  try {
+    const methods = await auth.getSignInMethods(email.value.trim())
+
+    if (!methods.length) {
+      return 'Không tìm thấy tài khoản với email này'
+    }
+
+    if (methods.includes('google.com') && !methods.includes('password')) {
+      return 'Email này hiện đang đăng nhập bằng Google. Hãy dùng Google để đăng nhập.'
+    }
+  } catch {
+    // Fall back to the base auth error when sign-in-method lookup fails.
+  }
+
+  return auth.getFirebaseAuthErrorMessage(err)
+}
+
+async function resolveRegisterAuthError(err: unknown) {
+  try {
+    const methods = await auth.getSignInMethods(email.value.trim())
+    if (methods.includes('google.com') && !methods.includes('password')) {
+      return 'Email này đã có tài khoản Google. Hãy đăng nhập bằng Google trước, rồi vào Cài đặt để bật thêm email/mật khẩu nếu cần.'
+    }
+  } catch {
+    // Fall back to the base auth error when sign-in-method lookup fails.
+  }
+
+  return auth.getFirebaseAuthErrorMessage(err)
+}
+
 async function handleEmailSubmit() {
   errorMsg.value = ''
+  email.value = email.value.trim()
+  displayName.value = displayName.value.trim()
+
   if (!email.value || !password.value) {
     errorMsg.value = 'Vui lòng nhập email và mật khẩu'
     return
@@ -32,13 +66,19 @@ async function handleEmailSubmit() {
   try {
     if (isRegister.value) {
       await auth.signUpWithEmail(email.value, password.value, displayName.value)
-      ui.showToast('Đăng ký thành công! Kiểm tra email để xác nhận.', 'success')
+      ui.showToast('Đăng ký thành công', 'success')
+      router.push('/')
     } else {
       await auth.signInWithEmail(email.value, password.value)
       router.push('/')
     }
   } catch (err: any) {
-    errorMsg.value = err?.message ?? 'Có lỗi xảy ra'
+    if (!isRegister.value) {
+      errorMsg.value = await resolveEmailAuthError(err)
+      return
+    }
+
+    errorMsg.value = await resolveRegisterAuthError(err)
   } finally {
     submitting.value = false
   }
@@ -47,16 +87,18 @@ async function handleEmailSubmit() {
 async function loginGoogle() {
   try {
     await auth.signInWithGoogle()
-  } catch {
-    // OAuth redirects
+    router.push('/')
+  } catch (err) {
+    errorMsg.value = auth.getFirebaseAuthErrorMessage(err)
   }
 }
 
 async function loginFacebook() {
   try {
     await auth.signInWithFacebook()
-  } catch {
-    // OAuth redirects
+    router.push('/')
+  } catch (err) {
+    errorMsg.value = auth.getFirebaseAuthErrorMessage(err)
   }
 }
 
@@ -132,7 +174,7 @@ function useOffline() {
       </form>
 
       <!-- Divider -->
-      <div class="relative" v-if="false">
+      <div class="relative">
         <div class="absolute inset-0 flex items-center">
           <span class="w-full border-t border-border" />
         </div>
@@ -143,7 +185,7 @@ function useOffline() {
 
       <!-- OAuth buttons -->
       <div class="space-y-3">
-        <Button v-if="false" class="w-full gap-3" variant="outline" @click="loginGoogle">
+        <Button class="w-full gap-3" variant="outline" @click="loginGoogle">
           <svg class="h-5 w-5" viewBox="0 0 24 24">
             <path
               fill="#4285F4"

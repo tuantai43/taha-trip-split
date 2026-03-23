@@ -1,15 +1,32 @@
 import { db } from "@/db/database";
-import { supabase } from "@/lib/supabase";
+import { getFirebaseAuthErrorMessage } from "@/lib/authError";
+import { auth } from "@/lib/firebase";
 import {
-  lastSyncError,
-  startAutoSync,
-  stopAutoSync,
-  syncAll,
-  syncStatus,
-} from "@/lib/syncService";
+  startGuestImportMonitor,
+  stopGuestImportMonitor,
+} from "@/lib/guestImportService";
+import {
+  createUserProfile,
+  getUserProfile,
+  updateUserProfile,
+} from "@/lib/userService";
 import { useTripStore } from "@/stores/tripStore";
 import type { Profile } from "@/types";
-import type { User } from "@supabase/supabase-js";
+import {
+  EmailAuthProvider,
+  FacebookAuthProvider,
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  linkWithPopup,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  updateProfile as updateFirebaseProfile,
+  type User,
+} from "firebase/auth";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
@@ -17,119 +34,100 @@ export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
   const profile = ref<Profile | null>(null);
   const loading = ref(true);
+  const linkingGoogle = ref(false);
+  const linkingPassword = ref(false);
 
   const isAuthenticated = computed(() => !!user.value);
+  const authProviders = computed(() =>
+    user.value?.providerData.map((provider) => provider.providerId) ?? [],
+  );
+  const isGoogleLinked = computed(() =>
+    authProviders.value.includes("google.com"),
+  );
+  const isPasswordLinked = computed(() =>
+    authProviders.value.includes("password"),
+  );
   const displayName = computed(
     () =>
       profile.value?.display_name ??
-      user.value?.user_metadata?.["full_name"] ??
+      user.value?.displayName ??
       "Khách",
   );
 
-  async function init() {
-    loading.value = true;
-    try {
-      const { data } = await supabase.auth.getSession();
-      user.value = data?.session?.user ?? null;
-      if (user.value) {
-        await fetchProfile();
-        await claimOfflineData(user.value.id);
-        startAutoSync(user.value.id);
-      }
-    } catch {
-      // Supabase not configured — offline mode
-    }
-    loading.value = false;
+  let initialized = false;
 
-    try {
-      supabase.auth.onAuthStateChange(async (_event, session) => {
-        const prev = user.value;
-        user.value = session?.user ?? null;
-        if (session?.user) {
-          await fetchProfile();
-          if (!prev) {
-            // Just logged in
-            await claimOfflineData(session.user.id);
-            startAutoSync(session.user.id);
-          }
-        } else {
-          profile.value = null;
-          stopAutoSync();
+  async function init() {
+    if (initialized) return;
+    loading.value = true;
+    onAuthStateChanged(auth, async (nextUser) => {
+      const prevUserId = user.value?.uid;
+      user.value = nextUser;
+      if (nextUser) {
+        await fetchProfile();
+        if (!prevUserId || prevUserId !== nextUser.uid) {
+          startGuestImportMonitor(nextUser.uid);
         }
-      });
-    } catch {
-      // Supabase not configured — offline mode
-    }
+      } else {
+        profile.value = null;
+        stopGuestImportMonitor();
+      }
+
+      if (!initialized) {
+        initialized = true;
+        loading.value = false;
+      }
+    });
   }
 
   async function fetchProfile() {
     if (!user.value) return;
-    const { data } = await supabase
-      .from("tripsplit_profiles")
-      .select("*")
-      .eq("id", user.value.id)
-      .single();
-    if (data) profile.value = data;
-  }
+    const remoteProfile = await getUserProfile(user.value.uid);
 
-  // Claim local offline data: update createdBy from "local" to real userId
-  async function claimOfflineData(userId: string) {
-    const localTrips = await db.trips
-      .where("createdBy")
-      .equals("local")
-      .toArray();
-    for (const trip of localTrips) {
-      await db.trips.update(trip.id, {
-        createdBy: userId,
-        _syncStatus: "pending",
-        _syncAction: "create",
+    if (!remoteProfile) {
+      const fallbackName = user.value.displayName ?? user.value.email ?? "Khách";
+      await createUserProfile({
+        id: user.value.uid,
+        email: user.value.email ?? "",
+        displayName: fallbackName,
+        avatarUrl: user.value.photoURL ?? undefined,
       });
+      profile.value = {
+        id: user.value.uid,
+        email: user.value.email ?? "",
+        display_name: fallbackName,
+        avatar_url: user.value.photoURL,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      return;
     }
 
-    const localMembers = await db.tripMembers.toArray();
-    for (const m of localMembers) {
-      if (m.role === "owner" && !m.userId) {
-        await db.tripMembers.update(m.id, {
-          userId,
-          _syncStatus: "pending",
-          _syncAction: m._syncAction ?? "update",
-        });
-      }
-    }
-
-    const localTx = await db.transactions
-      .where("_syncStatus")
-      .equals("pending")
-      .toArray();
-    for (const tx of localTx) {
-      if (tx.createdBy === "local") {
-        await db.transactions.update(tx.id, { createdBy: userId });
-      }
-    }
+    profile.value = {
+      id: user.value.uid,
+      email: remoteProfile.email,
+      display_name: remoteProfile.displayName,
+      avatar_url: remoteProfile.avatarUrl ?? null,
+      created_at: remoteProfile.createdAt?.toDate().toISOString() ?? new Date().toISOString(),
+      updated_at: remoteProfile.updatedAt?.toDate().toISOString() ?? new Date().toISOString(),
+    };
   }
 
   async function signInWithGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
-    });
-    if (error) throw error;
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
   }
 
   async function signInWithFacebook() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "facebook",
-      options: { redirectTo: `${window.location.origin}/` },
-    });
-    if (error) throw error;
+    const provider = new FacebookAuthProvider();
+    await signInWithPopup(auth, provider);
   }
 
   async function signInWithEmail(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
+    await signInWithEmailAndPassword(auth, email, password);
+  }
+
+  async function getSignInMethods(email: string) {
+    return fetchSignInMethodsForEmail(auth, email.trim());
   }
 
   async function signUpWithEmail(
@@ -137,17 +135,27 @@ export const useAuthStore = defineStore("auth", () => {
     password: string,
     displayName: string,
   ) {
-    const { error } = await supabase.auth.signUp({
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateFirebaseProfile(credential.user, { displayName });
+    await createUserProfile({
+      id: credential.user.uid,
       email,
-      password,
-      options: { data: { full_name: displayName } },
+      displayName,
+      avatarUrl: credential.user.photoURL ?? undefined,
     });
-    if (error) throw error;
+    profile.value = {
+      id: credential.user.uid,
+      email,
+      display_name: displayName,
+      avatar_url: credential.user.photoURL,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
   }
 
   async function signOut() {
-    stopAutoSync();
-    await supabase.auth.signOut();
+    stopGuestImportMonitor();
+    await firebaseSignOut(auth);
     // Clear all local Dexie data
     await Promise.all([
       db.trips.clear(),
@@ -155,7 +163,6 @@ export const useAuthStore = defineStore("auth", () => {
       db.transactions.clear(),
       db.transactionSplits.clear(),
       db.settlements.clear(),
-      db.syncQueue.clear(),
     ]);
     // Reset in-memory state
     const tripStore = useTripStore();
@@ -164,26 +171,75 @@ export const useAuthStore = defineStore("auth", () => {
     profile.value = null;
   }
 
-  async function triggerSync() {
-    if (user.value) {
-      await syncAll(user.value.id);
+  async function linkGoogleAccount() {
+    if (!user.value) return;
+    linkingGoogle.value = true;
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await linkWithPopup(user.value, provider);
+      user.value = result.user;
+      await updateProfileDocument();
+      await fetchProfile();
+    } finally {
+      linkingGoogle.value = false;
     }
+  }
+
+  async function linkPasswordAccount(password: string) {
+    if (!user.value?.email) return;
+    linkingPassword.value = true;
+    try {
+      const credential = EmailAuthProvider.credential(user.value.email, password);
+      const result = await linkWithCredential(user.value, credential);
+      user.value = result.user;
+      await fetchProfile();
+    } finally {
+      linkingPassword.value = false;
+    }
+  }
+
+  async function updateProfileDocument() {
+    if (!user.value) return;
+    const nextDisplayName = user.value.displayName ?? user.value.email ?? "Khách";
+    const remoteProfile = await getUserProfile(user.value.uid);
+    if (!remoteProfile) {
+      await createUserProfile({
+        id: user.value.uid,
+        email: user.value.email ?? "",
+        displayName: nextDisplayName,
+        avatarUrl: user.value.photoURL ?? undefined,
+      });
+      return;
+    }
+
+    await updateUserProfile(user.value.uid, {
+      email: user.value.email ?? remoteProfile.email,
+      displayName: nextDisplayName,
+      avatarUrl: user.value.photoURL ?? remoteProfile.avatarUrl,
+    });
   }
 
   return {
     user,
     profile,
     loading,
+    linkingGoogle,
+    linkingPassword,
     isAuthenticated,
+    authProviders,
+    isGoogleLinked,
+    isPasswordLinked,
     displayName,
-    syncStatus,
-    lastSyncError,
     init,
     signInWithGoogle,
     signInWithFacebook,
     signInWithEmail,
+    getSignInMethods,
     signUpWithEmail,
     signOut,
-    triggerSync,
+    linkGoogleAccount,
+    linkPasswordAccount,
+    updateProfileDocument,
+    getFirebaseAuthErrorMessage,
   };
 });

@@ -2,7 +2,10 @@
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import { supabase } from '@/lib/supabase'
+import { getMembers } from '@/lib/memberService'
+import { getSplits } from '@/lib/splitService'
+import { getTransactions } from '@/lib/transactionService'
+import { getSharedTrip } from '@/lib/tripService'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ArrowRight, Luggage } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
@@ -20,36 +23,43 @@ const debts = ref<any[]>([])
 
 onMounted(async () => {
   try {
-    // Fetch trip by share token
-    const { data: tripData, error: tripErr } = await supabase
-      .from('tripsplit_trips')
-      .select('*')
-      .eq('share_token', props.token)
-      .eq('share_enabled', true)
-      .single()
-
-    if (tripErr || !tripData) {
+    const tripData = await getSharedTrip(props.token)
+    if (!tripData?.id) {
       error.value = 'Link chia sẻ không hợp lệ hoặc đã bị tắt.'
       return
     }
-    trip.value = tripData
+    trip.value = {
+      id: tripData.id,
+      name: tripData.name,
+      start_date: tripData.startDate ?? null,
+      end_date: tripData.endDate ?? null,
+      currency_code: tripData.currencyCode,
+    }
 
-    // Fetch members
-    const { data: memberData } = await supabase
-      .from('tripsplit_trip_members')
-      .select('id, display_name')
-      .eq('trip_id', tripData.id)
+    const memberData = await getMembers(tripData.id)
+    members.value = memberData.map((member) => ({
+      id: member.id,
+      display_name: member.displayName,
+    }))
 
-    members.value = memberData ?? []
+    const txData = await getTransactions(tripData.id)
+    const txWithSplits = await Promise.all(
+      txData.map(async (tx) => ({
+        id: tx.id,
+        paid_by: tx.paidBy,
+        amount: tx.amount,
+        description: tx.description,
+        type: tx.type,
+        transaction_date: tx.transactionDate,
+        transaction_splits: (await getSplits(tripData.id!, tx.id!)).map((split) => ({
+          id: split.id,
+          member_id: split.memberId,
+          amount: split.amount,
+        })),
+      })),
+    )
 
-    // Fetch transactions
-    const { data: txData } = await supabase
-      .from('tripsplit_transactions')
-      .select('*, transaction_splits(*)')
-      .eq('trip_id', tripData.id)
-      .order('transaction_date', { ascending: false })
-
-    transactions.value = txData ?? []
+    transactions.value = txWithSplits.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date))
 
     // Calculate simple debts from balances
     calculateDebts()

@@ -13,8 +13,6 @@ export type Category =
   | "health"
   | "other";
 
-export type SyncStatus = "synced" | "pending" | "conflict" | "error";
-
 // ─── Database Models ───────────────────────────────────
 export interface Profile {
   id: string;

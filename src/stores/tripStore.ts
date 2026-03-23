@@ -5,6 +5,39 @@ import type {
   DexieTripMember,
 } from "@/db/database";
 import { db } from "@/db/database";
+import {
+  addMember as addRemoteMember,
+  deleteMember as deleteRemoteMember,
+  getMembers as getRemoteMembers,
+  subscribeMembers,
+  updateMember as updateRemoteMember,
+  type Member as RemoteMember,
+} from "@/lib/memberService";
+import {
+  addSplit as addRemoteSplit,
+  deleteSplit as deleteRemoteSplit,
+  getSplits as getRemoteSplits,
+  subscribeSplits,
+  type Split as RemoteSplit,
+} from "@/lib/splitService";
+import {
+  addTransaction as addRemoteTransaction,
+  deleteTransaction as deleteRemoteTransaction,
+  getTransactions as getRemoteTransactions,
+  subscribeTransactions,
+  updateTransaction as updateRemoteTransaction,
+  type Transaction as RemoteTransaction,
+} from "@/lib/transactionService";
+import {
+  createTrip as createRemoteTrip,
+  deleteTrip as deleteRemoteTrip,
+  getMyTrips as getRemoteTrips,
+  getTrip as getRemoteTrip,
+  subscribeMyTrips,
+  subscribeTrip,
+  updateTrip as updateRemoteTrip,
+  type Trip as RemoteTrip,
+} from "@/lib/tripService";
 import type {
   AddMemberInput,
   CreateTransactionInput,
@@ -16,6 +49,7 @@ import type {
   Trip,
   TripMember,
 } from "@/types";
+import type { Timestamp } from "firebase/firestore";
 import { defineStore } from "pinia";
 import { v4 as uuidv4 } from "uuid";
 import { nextTick, ref } from "vue";
@@ -28,9 +62,60 @@ export const useTripStore = defineStore("trip", () => {
   const transactions = ref<Transaction[]>([]);
   const splits = ref<TransactionSplit[]>([]);
   const loading = ref(false);
+  let unsubscribeTrips: (() => void) | null = null;
+  let unsubscribeCurrentTrip: (() => void) | null = null;
+  let unsubscribeMembers: (() => void) | null = null;
+  let unsubscribeTransactions: (() => void) | null = null;
+  const unsubscribeSplits = new Map<string, () => void>();
+
+  function clearTripRealtimeSubscriptions() {
+    unsubscribeCurrentTrip?.();
+    unsubscribeCurrentTrip = null;
+    unsubscribeMembers?.();
+    unsubscribeMembers = null;
+    unsubscribeTransactions?.();
+    unsubscribeTransactions = null;
+    unsubscribeSplits.forEach((unsubscribe) => unsubscribe());
+    unsubscribeSplits.clear();
+  }
+
+  function updateSplitSubscriptions(
+    tripId: string,
+    remoteTransactions: RemoteTransaction[],
+  ) {
+    const activeIds = new Set(
+      remoteTransactions
+        .map((tx) => tx.id)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    for (const [txId, unsubscribe] of unsubscribeSplits.entries()) {
+      if (!activeIds.has(txId)) {
+        unsubscribe();
+        unsubscribeSplits.delete(txId);
+      }
+    }
+
+    for (const txId of activeIds) {
+      if (unsubscribeSplits.has(txId)) continue;
+      const unsubscribe = subscribeSplits(tripId, txId, (remoteSplits) => {
+        const nextSplits = remoteSplits.map((split) =>
+          remoteSplitToTransactionSplit(txId, split),
+        );
+        splits.value = [
+          ...splits.value.filter((split) => split.transaction_id !== txId),
+          ...nextSplits,
+        ];
+      });
+      unsubscribeSplits.set(txId, unsubscribe);
+    }
+  }
 
   // Reset all state to initial values
   function reset() {
+    unsubscribeTrips?.();
+    unsubscribeTrips = null;
+    clearTripRealtimeSubscriptions();
     trips.value = [];
     currentTrip.value = null;
     members.value = [];
@@ -42,40 +127,94 @@ export const useTripStore = defineStore("trip", () => {
   // ─── Load trips ────────────────────────────────────
   async function loadTrips() {
     loading.value = true;
+    const auth = useAuthStore();
+
+    if (auth.user) {
+      const initialTrips = await getRemoteTrips(auth.user.uid);
+      trips.value = initialTrips.map(remoteTripToTrip);
+      unsubscribeTrips?.();
+      unsubscribeTrips = subscribeMyTrips(auth.user.uid, (remoteTrips) => {
+        trips.value = remoteTrips.map(remoteTripToTrip);
+      });
+      loading.value = false;
+      return;
+    }
+
     const all = await db.trips.orderBy("updatedAt").reverse().toArray();
-    // Filter out trips marked for deletion
-    const visible = all.filter((t) => t._syncAction !== "delete");
-    // Force replace array reference for reactivity
     trips.value = [];
     await nextTick();
-    trips.value = visible.map(dexieToTrip);
+    trips.value = all.map(dexieToTrip);
     loading.value = false;
   }
 
   // ─── Load single trip with all related data ────────
   async function loadTrip(tripId: string) {
     loading.value = true;
+    const auth = useAuthStore();
+
+    if (auth.user) {
+      clearTripRealtimeSubscriptions();
+      const remoteTrip = await getRemoteTrip(tripId);
+      currentTrip.value = remoteTrip ? remoteTripToTrip(remoteTrip) : null;
+
+      const remoteMembers = await getRemoteMembers(tripId);
+      members.value = remoteMembers.map((member) =>
+        remoteMemberToTripMember(tripId, member),
+      );
+
+      const remoteTransactions = await getRemoteTransactions(tripId);
+      transactions.value = remoteTransactions.map((tx) =>
+        remoteTransactionToTransaction(tripId, tx),
+      );
+
+      const initialSplits: TransactionSplit[] = [];
+      for (const tx of remoteTransactions) {
+        if (!tx.id) continue;
+        const txSplits = await getRemoteSplits(tripId, tx.id);
+        initialSplits.push(
+          ...txSplits.map((split) => remoteSplitToTransactionSplit(tx.id!, split)),
+        );
+      }
+      splits.value = initialSplits;
+
+      unsubscribeCurrentTrip = subscribeTrip(tripId, (remoteTrip) => {
+        currentTrip.value = remoteTrip ? remoteTripToTrip(remoteTrip) : null;
+      });
+      unsubscribeMembers = subscribeMembers(tripId, (remoteMembers) => {
+        members.value = remoteMembers.map((member) =>
+          remoteMemberToTripMember(tripId, member),
+        );
+      });
+      unsubscribeTransactions = subscribeTransactions(
+        tripId,
+        (remoteTransactions) => {
+          transactions.value = remoteTransactions.map((tx) =>
+            remoteTransactionToTransaction(tripId, tx),
+          );
+          updateSplitSubscriptions(tripId, remoteTransactions);
+        },
+      );
+      updateSplitSubscriptions(tripId, remoteTransactions);
+
+      loading.value = false;
+      return;
+    }
+
     const trip = await db.trips.get(tripId);
     if (trip) currentTrip.value = dexieToTrip(trip);
     members.value = (
       await db.tripMembers.where("tripId").equals(tripId).toArray()
     ).map(dexieToMember);
-    // Exclude transactions pending deletion so they disappear immediately from UI
     transactions.value = (
       await db.transactions.where("tripId").equals(tripId).toArray()
-    )
-      .filter((t) => t._syncAction !== "delete")
-      .map(dexieToTransaction);
-    // Load splits — exclude those pending deletion
+    ).map(dexieToTransaction);
     const txIds = transactions.value.map((t) => t.id);
     if (txIds.length > 0) {
       const allSplits = await db.transactionSplits
         .where("transactionId")
         .anyOf(txIds)
         .toArray();
-      splits.value = allSplits
-        .filter((s) => s._syncAction !== "delete")
-        .map(dexieToSplit);
+      splits.value = allSplits.map(dexieToSplit);
     } else {
       splits.value = [];
     }
@@ -87,7 +226,32 @@ export const useTripStore = defineStore("trip", () => {
     const auth = useAuthStore();
     const now = new Date().toISOString();
     const id = uuidv4();
-    const createdBy = auth.user?.id ?? "local";
+    const createdBy = auth.user?.uid ?? "local";
+
+    if (auth.user) {
+      const tripId = await createRemoteTrip({
+        name: input.name,
+        description: input.description,
+        currencyCode: input.currency_code,
+        status: "active",
+        startDate: input.start_date,
+        endDate: input.end_date,
+        inviteCode: Math.random().toString(36).substring(2, 10),
+        shareEnabled: false,
+        shareToken: undefined,
+        createdBy,
+      });
+
+      await addRemoteMember(tripId, {
+        userId: auth.user.uid,
+        displayName: auth.displayName,
+        role: "owner",
+        isGuest: false,
+      });
+
+      await loadTrips();
+      return tripId;
+    }
 
     await db.trips.add({
       id,
@@ -103,25 +267,19 @@ export const useTripStore = defineStore("trip", () => {
       createdBy,
       createdAt: now,
       updatedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "create",
-      _localUpdatedAt: now,
     });
 
     // Add owner as first member
     await db.tripMembers.add({
       id: uuidv4(),
       tripId: id,
-      userId: auth.user?.id ?? null,
+      userId: null,
       displayName: auth.displayName,
       role: "owner",
       isGuest: !auth.isAuthenticated,
       claimedBy: null,
       claimedAt: null,
       joinedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "create",
-      _localUpdatedAt: now,
     });
 
     await loadTrips();
@@ -130,8 +288,19 @@ export const useTripStore = defineStore("trip", () => {
 
   // ─── Add member ────────────────────────────────────
   async function addMember(input: AddMemberInput) {
+    const auth = useAuthStore();
     const now = new Date().toISOString();
     const id = uuidv4();
+
+    if (auth.user) {
+      const memberId = await addRemoteMember(input.trip_id, {
+        displayName: input.display_name,
+        role: "member",
+        isGuest: true,
+      });
+      await loadTrip(input.trip_id);
+      return memberId;
+    }
 
     await db.tripMembers.add({
       id,
@@ -143,9 +312,6 @@ export const useTripStore = defineStore("trip", () => {
       claimedBy: null,
       claimedAt: null,
       joinedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "create",
-      _localUpdatedAt: now,
     });
 
     members.value = (
@@ -160,12 +326,16 @@ export const useTripStore = defineStore("trip", () => {
     tripId: string,
     displayName: string,
   ) {
-    const now = new Date().toISOString();
+    const auth = useAuthStore();
+
+    if (auth.user) {
+      await updateRemoteMember(tripId, memberId, { displayName });
+      await loadTrip(tripId);
+      return;
+    }
+
     await db.tripMembers.update(memberId, {
       displayName,
-      _syncStatus: "pending",
-      _syncAction: "update",
-      _localUpdatedAt: now,
     });
     members.value = (
       await db.tripMembers.where("tripId").equals(tripId).toArray()
@@ -177,6 +347,33 @@ export const useTripStore = defineStore("trip", () => {
     const auth = useAuthStore();
     const now = new Date().toISOString();
     const txId = uuidv4();
+
+    if (auth.user) {
+      const remoteTxId = await addRemoteTransaction(input.trip_id, {
+        paidBy: input.paid_by,
+        amount: input.amount,
+        currencyCode: input.currency_code,
+        exchangeRate: 1.0,
+        description: input.description,
+        category: input.category,
+        type: input.type,
+        splitMethod: input.split_method,
+        paidFromFund: input.paid_from_fund ?? false,
+        transactionDate: input.transaction_date,
+        createdBy: auth.user.uid,
+      });
+
+      for (const split of input.splits) {
+        await addRemoteSplit(input.trip_id, remoteTxId, {
+          memberId: split.member_id,
+          amount: split.amount,
+          isSettled: false,
+        });
+      }
+
+      await loadTrip(input.trip_id);
+      return remoteTxId;
+    }
 
     await db.transactions.add({
       id: txId,
@@ -191,12 +388,9 @@ export const useTripStore = defineStore("trip", () => {
       splitMethod: input.split_method,
       paidFromFund: input.paid_from_fund ?? false,
       transactionDate: input.transaction_date,
-      createdBy: auth.user?.id ?? "local",
+      createdBy: "local",
       createdAt: now,
       updatedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "create",
-      _localUpdatedAt: now,
     });
 
     // Add splits
@@ -208,9 +402,6 @@ export const useTripStore = defineStore("trip", () => {
         amount: split.amount,
         isSettled: false,
         createdAt: now,
-        _syncStatus: "pending",
-        _syncAction: "create",
-        _localUpdatedAt: now,
       });
     }
 
@@ -220,30 +411,21 @@ export const useTripStore = defineStore("trip", () => {
 
   // ─── Delete transaction ────────────────────────────
   async function deleteTransaction(txId: string, tripId: string) {
-    // Mark for sync deletion instead of physical delete.
-    // Physical delete happens in syncService after Supabase confirms.
-    // If it was never synced (pending create), delete immediately.
-    const tx = await db.transactions.get(txId);
-    if (tx?._syncAction === "create" && tx._syncStatus === "pending") {
-      // Never reached Supabase — safe to delete locally right away
-      await db.transactionSplits.where("transactionId").equals(txId).delete();
-      await db.transactions.delete(txId);
-    } else {
-      // Was synced (or unknown) — mark for remote deletion
-      const splitIds = (
-        await db.transactionSplits.where("transactionId").equals(txId).toArray()
-      ).map((s) => s.id);
-      for (const sid of splitIds) {
-        await db.transactionSplits.update(sid, {
-          _syncStatus: "pending",
-          _syncAction: "delete",
-        });
+    const auth = useAuthStore();
+
+    if (auth.user) {
+      const existingSplits = await getRemoteSplits(tripId, txId);
+      for (const split of existingSplits) {
+        if (!split.id) continue;
+        await deleteRemoteSplit(tripId, txId, split.id);
       }
-      await db.transactions.update(txId, {
-        _syncStatus: "pending",
-        _syncAction: "delete",
-      });
+      await deleteRemoteTransaction(tripId, txId);
+      await loadTrip(tripId);
+      return;
     }
+
+    await db.transactionSplits.where("transactionId").equals(txId).delete();
+    await db.transactions.delete(txId);
     await loadTrip(tripId);
   }
 
@@ -252,7 +434,39 @@ export const useTripStore = defineStore("trip", () => {
     txId: string,
     input: CreateTransactionInput,
   ) {
+    const auth = useAuthStore();
     const now = new Date().toISOString();
+
+    if (auth.user) {
+      await updateRemoteTransaction(input.trip_id, txId, {
+        paidBy: input.paid_by,
+        amount: input.amount,
+        currencyCode: input.currency_code,
+        exchangeRate: 1.0,
+        description: input.description,
+        category: input.category,
+        type: input.type,
+        splitMethod: input.split_method,
+        paidFromFund: input.paid_from_fund ?? false,
+        transactionDate: input.transaction_date,
+      });
+
+      const existingSplits = await getRemoteSplits(input.trip_id, txId);
+      for (const split of existingSplits) {
+        if (!split.id) continue;
+        await deleteRemoteSplit(input.trip_id, txId, split.id);
+      }
+      for (const split of input.splits) {
+        await addRemoteSplit(input.trip_id, txId, {
+          memberId: split.member_id,
+          amount: split.amount,
+          isSettled: false,
+        });
+      }
+
+      await loadTrip(input.trip_id);
+      return;
+    }
 
     await db.transactions.update(txId, {
       paidBy: input.paid_by,
@@ -265,27 +479,9 @@ export const useTripStore = defineStore("trip", () => {
       paidFromFund: input.paid_from_fund ?? false,
       transactionDate: input.transaction_date,
       updatedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "update",
-      _localUpdatedAt: now,
     });
 
-    // Replace splits: mark synced splits for remote deletion, physically remove pending-create ones (never reached Supabase)
-    const existingSplits = await db.transactionSplits
-      .where("transactionId")
-      .equals(txId)
-      .toArray();
-    for (const s of existingSplits) {
-      if (s._syncStatus === "pending" && s._syncAction === "create") {
-        await db.transactionSplits.delete(s.id);
-      } else {
-        await db.transactionSplits.update(s.id, {
-          _syncStatus: "pending",
-          _syncAction: "delete",
-          _localUpdatedAt: now,
-        });
-      }
-    }
+    await db.transactionSplits.where("transactionId").equals(txId).delete();
     for (const split of input.splits) {
       await db.transactionSplits.add({
         id: uuidv4(),
@@ -294,9 +490,6 @@ export const useTripStore = defineStore("trip", () => {
         amount: split.amount,
         isSettled: false,
         createdAt: now,
-        _syncStatus: "pending",
-        _syncAction: "create",
-        _localUpdatedAt: now,
       });
     }
 
@@ -425,13 +618,19 @@ export const useTripStore = defineStore("trip", () => {
     tripId: string,
     status: "active" | "settled" | "archived",
   ) {
+    const auth = useAuthStore();
     const now = new Date().toISOString();
+
+    if (auth.user) {
+      await updateRemoteTrip(tripId, { status });
+      await loadTrip(tripId);
+      await loadTrips();
+      return;
+    }
+
     await db.trips.update(tripId, {
       status,
       updatedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "update",
-      _localUpdatedAt: now,
     });
     await loadTrip(tripId);
     await loadTrips();
@@ -439,12 +638,28 @@ export const useTripStore = defineStore("trip", () => {
 
   // ─── Update trip ───────────────────────────────────
   async function updateTrip(tripId: string, data: Partial<CreateTripInput>) {
+    const auth = useAuthStore();
     const now = new Date().toISOString();
+
+    if (auth.user) {
+      await updateRemoteTrip(tripId, {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
+        ...(data.currency_code !== undefined
+          ? { currencyCode: data.currency_code }
+          : {}),
+        ...(data.start_date !== undefined ? { startDate: data.start_date } : {}),
+        ...(data.end_date !== undefined ? { endDate: data.end_date } : {}),
+      });
+      await loadTrip(tripId);
+      await loadTrips();
+      return;
+    }
+
     const updates: Record<string, unknown> = {
       updatedAt: now,
-      _syncStatus: "pending",
-      _syncAction: "update",
-      _localUpdatedAt: now,
     };
     if (data.name !== undefined) updates["name"] = data.name;
     if (data.description !== undefined)
@@ -461,70 +676,58 @@ export const useTripStore = defineStore("trip", () => {
   // ─── Delete trip ───────────────────────────────────
   async function deleteTrip(tripId: string) {
     const auth = useAuthStore();
+    if (auth.user) {
+      const trip = await getRemoteTrip(tripId);
+      if (!trip) throw new Error("Trip not found");
+      if (trip.createdBy !== auth.user.uid) {
+        throw new Error("Chỉ chủ chuyến đi mới được phép xoá");
+      }
+
+      const remoteTransactions = await getRemoteTransactions(tripId);
+      for (const tx of remoteTransactions) {
+        if (!tx.id) continue;
+        const txSplits = await getRemoteSplits(tripId, tx.id);
+        for (const split of txSplits) {
+          if (!split.id) continue;
+          await deleteRemoteSplit(tripId, tx.id, split.id);
+        }
+        await deleteRemoteTransaction(tripId, tx.id);
+      }
+
+      const remoteMembers = await getRemoteMembers(tripId);
+      for (const member of remoteMembers) {
+        if (!member.id) continue;
+        await deleteRemoteMember(tripId, member.id);
+      }
+
+      await deleteRemoteTrip(tripId);
+      if (currentTrip.value?.id === tripId) {
+        currentTrip.value = null;
+        members.value = [];
+        transactions.value = [];
+        splits.value = [];
+      }
+      await loadTrips();
+      return;
+    }
+
     const trip = await db.trips.get(tripId);
     if (!trip) throw new Error("Trip not found");
-    if (trip.createdBy !== (auth.user?.id ?? "local")) {
+    if (trip.createdBy !== "local") {
       throw new Error("Chỉ chủ chuyến đi mới được phép xoá");
     }
 
-    const now = new Date().toISOString();
-    // Đánh dấu trip cần xoá
-    await db.trips.update(tripId, {
-      _syncStatus: "pending",
-      _syncAction: "delete",
-      _localUpdatedAt: now,
-    });
-
-    // Đánh dấu tất cả trip_members cần xoá
-    const memberIds = await db.tripMembers
-      .where("tripId")
-      .equals(tripId)
-      .primaryKeys();
-    for (const id of memberIds) {
-      await db.tripMembers.update(id, {
-        _syncStatus: "pending",
-        _syncAction: "delete",
-        _localUpdatedAt: now,
-      });
-    }
-
-    // Đánh dấu tất cả transactions và splits cần xoá
     const txIds = await db.transactions
       .where("tripId")
       .equals(tripId)
       .primaryKeys();
-    for (const txId of txIds) {
-      await db.transactions.update(txId, {
-        _syncStatus: "pending",
-        _syncAction: "delete",
-        _localUpdatedAt: now,
-      });
-      // Đánh dấu splits của transaction này
-      const splitIds = await db.transactionSplits
-        .where("transactionId")
-        .equals(txId)
-        .primaryKeys();
-      for (const splitId of splitIds) {
-        await db.transactionSplits.update(splitId, {
-          _syncStatus: "pending",
-          _syncAction: "delete",
-          _localUpdatedAt: now,
-        });
-      }
+    if (txIds.length > 0) {
+      await db.transactionSplits.where("transactionId").anyOf(txIds).delete();
     }
-
-    // Đánh dấu tất cả settlements cần xoá
-    const settlementIds = await db.settlements
-      .where("tripId")
-      .equals(tripId)
-      .primaryKeys();
-    for (const id of settlementIds) {
-      await db.settlements.update(id, {
-        _syncStatus: "pending",
-        _syncAction: "delete",
-        _localUpdatedAt: now,
-      });
-    }
+    await db.transactions.where("tripId").equals(tripId).delete();
+    await db.tripMembers.where("tripId").equals(tripId).delete();
+    await db.settlements.where("tripId").equals(tripId).delete();
+    await db.trips.delete(tripId);
 
     await loadTrips();
   }
@@ -591,6 +794,81 @@ export const useTripStore = defineStore("trip", () => {
       is_settled: d.isSettled,
       created_at: d.createdAt,
     };
+  }
+
+  function remoteTripToTrip(d: RemoteTrip): Trip {
+    return {
+      id: d.id!,
+      name: d.name,
+      description: d.description ?? null,
+      currency_code: d.currencyCode,
+      status: d.status,
+      start_date: d.startDate ?? null,
+      end_date: d.endDate ?? null,
+      invite_code: d.inviteCode ?? null,
+      share_enabled: d.shareEnabled,
+      share_token: d.shareToken ?? null,
+      created_by: d.createdBy,
+      created_at: firestoreTimestampToIso(d.createdAt),
+      updated_at: firestoreTimestampToIso(d.updatedAt),
+    };
+  }
+
+  function remoteMemberToTripMember(tripId: string, d: RemoteMember): TripMember {
+    return {
+      id: d.id!,
+      trip_id: tripId,
+      user_id: d.userId ?? null,
+      display_name: d.displayName,
+      role: d.role,
+      is_guest: d.isGuest,
+      claimed_by: d.claimedBy ?? null,
+      claimed_at: d.claimedAt ? firestoreTimestampToIso(d.claimedAt) : null,
+      joined_at: firestoreTimestampToIso(d.joinedAt),
+    };
+  }
+
+  function remoteTransactionToTransaction(
+    tripId: string,
+    d: RemoteTransaction,
+  ): Transaction {
+    return {
+      id: d.id!,
+      trip_id: tripId,
+      paid_by: d.paidBy,
+      amount: d.amount,
+      currency_code: d.currencyCode,
+      exchange_rate: d.exchangeRate,
+      description: d.description,
+      category: d.category as Transaction["category"],
+      type: d.type,
+      split_method: d.splitMethod,
+      paid_from_fund: d.paidFromFund,
+      transaction_date: d.transactionDate,
+      created_by: d.createdBy,
+      created_at: firestoreTimestampToIso(d.createdAt),
+      updated_at: firestoreTimestampToIso(d.updatedAt),
+    };
+  }
+
+  function remoteSplitToTransactionSplit(
+    transactionId: string,
+    d: RemoteSplit,
+  ): TransactionSplit {
+    return {
+      id: d.id!,
+      transaction_id: transactionId,
+      member_id: d.memberId,
+      amount: d.amount,
+      is_settled: d.isSettled,
+      created_at: firestoreTimestampToIso(d.createdAt),
+    };
+  }
+
+  function firestoreTimestampToIso(value: Timestamp | string | undefined): string {
+    if (!value) return new Date().toISOString();
+    if (typeof value === "string") return value;
+    return value.toDate().toISOString();
   }
 
   return {

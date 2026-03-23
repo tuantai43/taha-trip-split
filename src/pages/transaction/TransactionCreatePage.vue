@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import { useTripStore } from '@/stores/tripStore'
@@ -15,10 +16,30 @@ const router = useRouter()
 const tripStore = useTripStore()
 const ui = useUiStore()
 
-
-
 const isEditMode = computed(() => !!props.txId)
 const isReadOnly = computed(() => tripStore.currentTrip?.status === 'archived')
+const editingTransaction = computed(() =>
+  props.txId ? tripStore.transactions.find((t) => t.id === props.txId) : null,
+)
+const transactionTypeOptions = computed(() => {
+  const lockedType = isEditMode.value ? editingTransaction.value?.type : null
+  return lockedType
+    ? [
+        {
+          value: lockedType,
+          label: lockedType === 'income' ? 'Thu' : 'Chi',
+        },
+      ]
+    : [
+        { value: 'shared_expense' as const, label: 'Chi' },
+        { value: 'income' as const, label: 'Thu' },
+      ]
+})
+const pageTitle = computed(() => {
+  if (!isEditMode.value) return 'Thêm giao dịch'
+  return editingTransaction.value?.type === 'income' ? 'Sửa khoản thu' : 'Sửa khoản chi'
+})
+const isEditDataReady = computed(() => !isEditMode.value || !!editingTransaction.value)
 
 onMounted(() => {
   if (!tripStore.currentTrip || tripStore.currentTrip.id !== props.tripId) {
@@ -40,7 +61,42 @@ function getLocalDateString() {
   const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+function getLocalTimeString() {
+  const d = new Date()
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+function parseTransactionDate(value?: string | null): { date: string; time: string } {
+  if (!value) {
+    return { date: getLocalDateString(), time: getLocalTimeString() }
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return { date: value, time: '00:00' }
+  }
+
+  const datePart = value.slice(0, 10)
+  const timeMatch = value.match(/T(\d{2}:\d{2})/)
+  if (timeMatch) {
+    return { date: datePart, time: timeMatch[1] ?? '00:00' }
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return { date: getLocalDateString(), time: getLocalTimeString() }
+  }
+
+  return {
+    date: `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`,
+    time: `${String(parsed.getHours()).padStart(2, '0')}:${String(parsed.getMinutes()).padStart(2, '0')}`,
+  }
+}
+function buildTransactionDate(date: string, time: string) {
+  return `${date}T${time || '00:00'}:00`
+}
 const transactionDate = ref(getLocalDateString())
+const transactionTime = ref(getLocalTimeString())
 const selectedMembers = ref<Set<string>>(new Set())
 const submitting = ref(false)
 
@@ -76,6 +132,7 @@ function initDefaults() {
     paidBy.value = members.value[0]!.id
     selectedMembers.value = new Set(members.value.map((m) => m.id))
     transactionDate.value = getLocalDateString()
+    transactionTime.value = getLocalTimeString()
     paidFromFund.value = true // Mặc định bật trả từ quỹ chung
   }
 }
@@ -90,7 +147,9 @@ function loadEditData() {
   category.value = tx.category
   paidBy.value = tx.paid_by
   paidFromFund.value = tx.paid_from_fund
-  transactionDate.value = tx.transaction_date
+  const parsedTxDate = parseTransactionDate(tx.transaction_date)
+  transactionDate.value = parsedTxDate.date
+  transactionTime.value = parsedTxDate.time
 
   const txSplits = tripStore.splits.filter((s) => s.transaction_id === tx.id)
   selectedMembers.value = new Set(txSplits.map((s) => s.member_id))
@@ -197,7 +256,7 @@ async function handleSubmit() {
       type: txType.value,
       split_method: splitMethod.value,
       paid_from_fund: paidFromFund.value,
-      transaction_date: transactionDate.value,
+      transaction_date: buildTransactionDate(transactionDate.value, transactionTime.value),
       splits,
     }
     if (isEditMode.value) {
@@ -223,27 +282,30 @@ async function handleSubmit() {
       <button class="rounded-lg p-1 hover:bg-muted" @click="router.back()">
         <ArrowLeft :size="20" />
       </button>
-      <h1 class="text-lg font-bold">{{ isEditMode ? 'Sửa giao dịch' : 'Thêm giao dịch' }}</h1>
+      <h1 class="text-lg font-bold">{{ pageTitle }}</h1>
       <button v-if="isEditMode" class="ml-auto rounded-lg p-2 text-destructive hover:bg-destructive/10"
         @click="handleDelete">
         <Trash2 :size="18" />
       </button>
     </div>
 
-    <form class="space-y-4" @submit.prevent="handleSubmit" v-if="!isReadOnly">
+    <LoadingSpinner v-if="isEditMode && tripStore.loading && !editingTransaction" />
+
+    <form class="space-y-4" @submit.prevent="handleSubmit" v-else-if="!isReadOnly && isEditDataReady">
       <!-- Transaction type -->
       <div>
         <span class="mb-1.5 block text-sm font-medium">Loại giao dịch</span>
         <div class="flex gap-2">
-          <button v-for="opt in [
-            { value: 'shared_expense', label: 'Chi' },
-            { value: 'income', label: 'Thu' },
-          ]" :key="opt.value" type="button" class="flex-1 rounded-lg border px-3 py-2 text-sm transition-colors"
+          <button v-for="opt in transactionTypeOptions" :key="opt.value" type="button" class="flex-1 rounded-lg border px-3 py-2 text-sm transition-colors"
             :class="txType === opt.value ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border text-muted-foreground'"
-            @click="txType = opt.value as TransactionType">
+            :disabled="isEditMode"
+            @click="!isEditMode && (txType = opt.value as TransactionType)">
             {{ opt.label }}
           </button>
         </div>
+        <p v-if="isEditMode" class="mt-1.5 text-xs text-muted-foreground">
+          Không thể đổi loại giao dịch khi đang chỉnh sửa.
+        </p>
       </div>
 
       <!-- Amount -->
@@ -326,16 +388,27 @@ async function handleSubmit() {
         </div>
       </div>
 
-      <!-- Date -->
-      <label class="flex flex-col gap-1.5">
-        <span class="text-sm font-medium">Ngày giao dịch</span>
-        <Input v-model="transactionDate" type="date" />
-      </label>
+      <!-- Date time -->
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Ngày giao dịch</span>
+          <Input v-model="transactionDate" type="date" />
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Giờ giao dịch</span>
+          <Input v-model="transactionTime" type="time" />
+        </label>
+      </div>
 
       <Button class="w-full" :disabled="submitting">
         {{ submitting ? 'Đang lưu...' : isEditMode ? 'Cập nhật giao dịch' : 'Lưu giao dịch' }}
       </Button>
     </form>
+    <template v-else-if="isEditMode && !editingTransaction">
+      <div class="py-10 text-center text-muted-foreground">
+        Không tìm thấy giao dịch cần chỉnh sửa.
+      </div>
+    </template>
     <template v-else>
       <div class="text-center text-muted-foreground py-10">
         Chuyến đi đã kết thúc. Bạn chỉ có thể xem thông tin.

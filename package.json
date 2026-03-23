@@ -10,29 +10,29 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "@vueuse/core": "^12.8.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "dexie": "^4.0.11",
+    "firebase": "^12.11.0",
+    "lucide-vue-next": "^0.479.0",
+    "pinia": "^3.0.2",
+    "radix-vue": "^1.9.17",
+    "tailwind-merge": "^3.0.2",
+    "uuid": "^11.1.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "pinia": "^3.0.2",
-    "@supabase/supabase-js": "^2.49.4",
-    "dexie": "^4.0.11",
-    "zod": "^3.24.2",
-    "@vueuse/core": "^12.8.2",
-    "date-fns": "^4.1.0",
-    "uuid": "^11.1.0",
-    "lucide-vue-next": "^0.479.0",
-    "tailwind-merge": "^3.0.2",
-    "clsx": "^2.1.1",
-    "class-variance-authority": "^0.7.1",
-    "radix-vue": "^1.9.17"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.1",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-vue": "^5.2.3",
+    "tailwindcss": "^4.1.1",
     "typescript": "~5.7.3",
     "vite": "^6.2.4",
-    "vue-tsc": "^2.2.8",
-    "@tailwindcss/vite": "^4.1.1",
-    "tailwindcss": "^4.1.1",
     "vite-plugin-pwa": "^0.21.2",
-    "@types/uuid": "^10.0.0"
+    "vue-tsc": "^2.2.8"
   }
 }

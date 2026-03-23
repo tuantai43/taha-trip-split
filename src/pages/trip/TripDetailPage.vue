@@ -73,10 +73,10 @@ function getMemberName(memberId: string) {
 function getTransactionsByDate() {
   const grouped = new Map<string, typeof tripStore.transactions>()
   const sorted = [...tripStore.transactions].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    (a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime(),
   )
   for (const tx of sorted) {
-    const date = tx.transaction_date
+    const date = tx.transaction_date.slice(0, 10)
     if (!grouped.has(date)) grouped.set(date, [])
     grouped.get(date)!.push(tx)
   }
@@ -165,10 +165,10 @@ function getSplitMembersLabel(tx: any) {
                   <div class="text-xs text-muted-foreground">
                     <template v-if="tx.type === 'shared_expense'">
                       {{ tx.paid_from_fund ? 'Quỹ chung' : getMemberName(tx.paid_by) }} đã trả cho {{
-                        getSplitMembersLabel(tx) }} · {{ formatTime(tx.created_at) }}
+                        getSplitMembersLabel(tx) }} · {{ formatTime(tx.transaction_date) }}
                     </template>
                     <template v-else-if="tx.type === 'income'">
-                      {{ getMemberName(tx.paid_by) }} đã nạp · {{ formatTime(tx.created_at) }}
+                      {{ getMemberName(tx.paid_by) }} đã nạp · {{ formatTime(tx.transaction_date) }}
                     </template>
                   </div>
                 </div>

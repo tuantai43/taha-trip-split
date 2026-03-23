@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ToastContainer from '@/components/common/ToastContainer.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { onMounted } from 'vue'
@@ -11,6 +12,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <RouterView />
+  <LoadingSpinner v-if="auth.loading" />
+  <RouterView v-else />
   <ToastContainer />
 </template>

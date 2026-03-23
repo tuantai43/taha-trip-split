@@ -17,7 +17,7 @@ const authStore = useAuthStore()
 
 // Always reload trips when user id changes (login/logout)
 watch(
-  () => authStore.user?.id,
+  () => authStore.user?.uid,
   () => {
     tripStore.loadTrips()
   },
