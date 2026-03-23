@@ -33,16 +33,6 @@ const totalSharedExpense = computed(() =>
 const numMembers = computed(() => tripStore.calculateBalances().length)
 const perMemberShared = computed(() => numMembers.value > 0 ? Math.round(totalSharedExpense.value / numMembers.value) : 0)
 
-// Đã loại bỏ chi riêng
-const personalExpense = (memberId: string) =>
-  tripStore.splits
-    .filter((split) => split.member_id === memberId)
-    .map((split) => {
-      const tx = tripStore.transactions.find((t) => t.id === split.transaction_id)
-      return 0
-    })
-    .reduce((sum, amount) => sum + amount, 0)
-
 // Phải nộp của 1 thành viên
 const mustPay = (memberId: string) =>
   tripStore.splits
@@ -131,14 +121,11 @@ async function handleDeleteTrip() {
             <div class="flex items-center justify-between text-sm">
               <span>{{ m.display_name }}</span>
               <span class="font-medium">Đã nộp: {{ formatCurrency(totalDeposited(m.id), trip?.currency_code ?? 'VND')
-              }}</span>
+                }}</span>
             </div>
             <div class="flex items-center justify-between text-xs">
               <span>
                 Phải nộp: {{ formatCurrency(mustPay(m.id), trip?.currency_code ?? 'VND') }}
-                <template v-if="personalExpense(m.id) > 0">
-                  (gồm chi riêng: {{ formatCurrency(personalExpense(m.id), trip?.currency_code ?? 'VND') }})
-                </template>
               </span>
               <span>
                 <template v-if="totalDeposited(m.id) > mustPay(m.id)">
